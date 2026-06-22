@@ -7,25 +7,15 @@ draft: false
 toc: true
 ---
 
-USDT Pay is a non-custodial QR payment flow on the t-0 network. A customer scans a merchant's QR code and pays in USDT on-chain from their own wallet; the merchant's Acquirer is settled either in USDT or in its local currency, without holding crypto or running an FX desk.
+USDT Pay lets Acquirers accept customer USDT payments without taking custody of customer funds. The customer pays on-chain from their own wallet to a one-time deposit address. t-0 verifies the payment and tracks the payment intent through authorization and settlement.
 
-## Participants
+Four roles take part:
 
-Four parties take part, and each talks only to its neighbour:
+- **Acquirer** — owns the merchant relationship, creates the payment intent, and receives settlement.
+- **Issuer** — creates payment instructions, allocates one-time deposit addresses, watches the blockchain, and settles USDT.
+- **Liquidity Provider (LP)** — in fiat settlement mode, receives USDT from the Issuer and pays local fiat to the Acquirer over bank rails.
+- **t-0** — routes messages, owns payment-intent state, maintains the LP standing quotes, and verifies on-chain settlement.
 
-- **Acquirer** — owns the merchant relationship and the POS, opens the payment intent, and relays authorization back to the merchant.
-- **t-0** — routes messages between parties, owns the payment-intent ledger, maintains the order book of Liquidity Provider quotes, and verifies settlement on-chain.
-- **Issuer** — allocates one-time deposit addresses, builds the QR payload, watches the blockchain, screens the customer (KYT), and settles in USDT.
-- **Liquidity Provider (LP)** — in fiat mode, receives the Issuer's USDT and pays the Acquirer local fiat over bank rails at a locked rate.
+Each Acquirer has one settlement mode, fixed at onboarding. In **USDT settlement**, the Issuer settles USDT on-chain to the Acquirer's wallet. In **fiat settlement**, the Issuer settles USDT to the LP, and the LP settles local fiat to the Acquirer.
 
-## Settlement modes
-
-The customer always pays USDT on-chain. The settlement mode, fixed per Acquirer at onboarding, changes only how the Acquirer receives value:
-
-- **USDT settlement** — the Issuer settles USDT on-chain straight to the Acquirer's wallet.
-- **Fiat settlement** — the Issuer settles USDT to an LP, and the LP delivers local fiat to the Acquirer over bank rails.
-
-## Where to go next
-
-- [QR Payments](/docs/payments/) — the product flow, the normative API contract, and the fiat settlement path.
-- [Integration Guidance](/docs/integration-guidance/) — authentication, idempotency, and the API reference generated from the proto.
+Start with [USDT Payments](/docs/payments/) for the payment flow. Use [Integration Guidance](/docs/integration-guidance/) for authentication, idempotency, and the generated API reference.

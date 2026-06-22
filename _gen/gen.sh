@@ -32,10 +32,10 @@ escape_sed() {
 
 # Pages to generate: "proto_file|title|weight"
 PAGES=(
-    "tzero/v1/pay/types.proto|Shared Types|331"
-    "tzero/v1/pay/acquirer.proto|Acquirer|332"
-    "tzero/v1/pay/issuer.proto|Issuer|333"
-    "tzero/v1/pay/lp.proto|Liquidity Provider|334"
+    "tzero/v1/pay/acquirer.proto|Acquirer|331"
+    "tzero/v1/pay/issuer.proto|Issuer|332"
+    "tzero/v1/pay/lp.proto|Liquidity Provider|333"
+    "tzero/v1/pay/types.proto|Shared Types|337"
     "tzero/v1/common/common.proto|Common|338"
 )
 
