@@ -1,5 +1,5 @@
 ---
-weight: 332
+weight: 331
 title: "Acquirer"
 description: ""
 icon: "article"

@@ -8,9 +8,9 @@ toc: true
 ---
 
 
-This document specifies the fiat settlement path of the QR USDT payment system: the path on which a merchant's Acquirer is settled in its local currency through a Liquidity Provider, while the customer pays USDT on-chain. It covers the inter-party protocol, the money movements, the settlement guarantee, and the failure handling. It is written for leaders, product managers, and architects across the four participants (t-0, the Acquirer, the Issuer, and the LP). The alternative mode, in which the Acquirer is settled in USDT on-chain, is out of scope here except for a single contrast that clarifies the boundary.
+This document specifies the fiat settlement path: the path on which a merchant's Acquirer is settled in its local currency through a Liquidity Provider, while the customer pays USDT on-chain. It covers the inter-party protocol, the money movements, the settlement guarantee, and the failure handling. It is written for leaders, product managers, and architects across the four participants (t-0, the Acquirer, the Issuer, and the LP). The alternative mode, in which the Acquirer is settled in USDT on-chain, is out of scope here except for a single contrast that clarifies the boundary.
 
-Throughout, message identifiers (for example `7 PaymentAuthorized`) are the names and numbers used in the normative contract, the [QR Payment API](/docs/payments/qr-api/).
+Throughout, message identifiers (for example `7 PaymentAuthorized`) are the names and numbers used in [How It Works](/docs/payments/how-it-works/).
 
 ---
 

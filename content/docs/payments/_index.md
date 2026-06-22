@@ -1,13 +1,15 @@
 ---
 weight: 200
-title: "QR Payments"
+title: "USDT Payments"
 description: ""
-icon: "qr_code_2"
+icon: "article"
 draft: false
 toc: true
 ---
 
-The QR payment flow: a customer pays USDT on-chain by scanning a merchant's QR code, and the merchant's Acquirer is settled in USDT or in local fiat.
+USDT Payments covers the payment flow from intent creation to settlement. The Acquirer creates a payment intent, t-0 obtains one-time deposit instructions from the Issuer, and the customer pays USDT on-chain from their own wallet by scanning a QR or opening a deeplink.
 
-- [QR Payment API](qr-api/) — the single normative contract: participants, end-to-end flow, payment-intent states, and every endpoint with its fields and decline codes.
-- [Fiat Settlement](fiat-settlement/) — the Liquidity Provider path, where the Acquirer is settled in local currency over bank rails.
+The QR is only the transport for a chain-native payment URI. The product is USDT acceptance: t-0 verifies the payment, authorizes the sale, and coordinates settlement to the Acquirer in the mode fixed at onboarding.
+
+- [How It Works](how-it-works/) — roles, payment flow, intent states, protocol rules, and links to the generated API reference.
+- [Fiat Settlement](fiat-settlement/) — the LP path for Acquirers settled in local fiat over bank rails.

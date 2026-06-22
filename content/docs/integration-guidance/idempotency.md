@@ -1,62 +1,70 @@
 ---
 weight: 302
-title: "Idempotency"
+title: "Idempotency and Reliability"
 description: ""
 icon: "article"
-date: "2026-04-09T00:00:00+02:00"
-lastmod: "2026-04-09T00:00:00+02:00"
 draft: false
 toc: true
 ---
 
-Connections drop. Requests time out. The network retries with exponential backoff, so your endpoint may receive the same request more than once.
+Connections drop and requests time out. t-0 and the roles deliver every state-changing message at least once, retrying with backoff until the receiver acknowledges, so your endpoint can receive the same request more than once. Idempotency makes those retries safe: a repeat with the same key returns the original result and causes no further side effect.
 
-If your system treats a duplicate as an error, the network believes the operation failed. In payments, this causes stuck transactions or double payouts.
+At-least-once delivery plus idempotent receivers produces exactly-once processing without a coordination protocol. Both t-0 and every role must hold their side of the contract.
 
-The network solves this through idempotency: **every request that changes state can be safely retried without causing duplicate side effects.**
+## Idempotency keys
 
-## How Retry Safety Works
+Each state-changing call carries a designated key, scoped to the authenticated caller:
 
-The network delivers every request at least once. If a response is lost due to a connection failure, the network resends the same request with the same identifiers.
+| Key | Endpoint(s) | Minted by | Scope |
+|-----|-------------|-----------|-------|
+| `paymentRef` | `4 CreatePaymentIntent` | Acquirer | per Acquirer |
+| `settlementRef` | `9 SettlementSent` | Issuer | per Issuer |
+| `quoteRef` | `1 PublishQuote` | LP | per LP |
+| `bankTransferRef` | `10 FiatSettlementSent`, `12 SettlementReceived` | LP | per LP (`12` keyed on the pair `lpId` + `bankTransferRef`) |
+| `quoteId` | `2 WithdrawQuote` | t-0 | global |
+| `executionId` | `8 ExecuteQuote` | t-0 | global |
+| `paymentIntentId` | `5`, `6`, `7`, `14`, `15` | t-0 | global |
 
-Your system applies the business effect once and returns the same result on every subsequent attempt. The combination of at-least-once delivery and idempotent receivers produces exactly-once processing without complex coordination protocols.
+t-0-minted keys (`paymentIntentId`, `quoteId`, `executionId`, `settlementId`, `fiatSettlementId`) are globally unique by construction. Every `t-0 → role` call is keyed on a t-0-minted id; t-0 never uses one role's id as the key in a message to another role.
 
-Both the network and every provider must uphold their side of this contract for the guarantee to hold.
+## Request categories
 
-## Three Rules for Providers
+Every method declares one of two idempotency levels:
 
-### 1. Return the Original Response for Completed Requests
+**IDEMPOTENT** — the request changes state (publish a quote, create a payment intent, report a settlement). Deduplicate on the business key in the request body; retrying produces the same outcome as the first call.
 
-When you receive a request with an identifier you have already processed, return the stored response. The caller needs to know what happened, not that the request arrived twice.
+**NO_SIDE_EFFECTS** — the request is a read-only lookup. The only one is `3 GetPaymentQuote`, which has no key and always returns the current standing quote. Safe to retry freely.
 
-**Wrong:** The network sends a payout request with `payment_id=123`. You process it and determine that a manual AML review is needed, so you return `ManualAmlCheck`. The network never receives your response because the connection drops. The network retries the same payout request with `payment_id=123`. You return `{"failed": {"details": "Payment has already been processed"}}`. The network treats this as a real failure and aborts the payment. The payment is now stuck: you are performing an AML review, but the network recorded a failure.
+## Three rules for receivers
 
-**Right:** Same scenario. On the retry, you look up `payment_id=123`, find it in the AML review state, and return `ManualAmlCheck` again. The network knows the payment is pending review. The flow continues.
+### 1. Return the original response for a completed request
 
-### 2. Wait for Completion on In-Flight Requests
+When a request arrives with a key you have already processed, return the stored response — the caller needs the outcome, not a "duplicate" error.
 
-If your system has not yet returned a response for the original request when a duplicate arrives, wait for it to complete and return the same response for both requests. Do not reject the duplicate and do not return an error. 
+The Issuer reports `6 PaymentReceived` for `paymentIntentId` 42, and the connection drops before t-0's acknowledgment lands. The Issuer retries the same call with `paymentIntentId` 42. t-0 returns the same accepted result; the intent is authorized once, and the flow continues. Returning a failure instead would strand the payment.
 
-**Wrong:** The network sends a payout request with `payment_id=456`. You begin processing it. The network retries before you finish. You return `{"failed":{"details": "Request is already being processed"}}`. The network treats this as a failure and aborts the payment.
+### 2. Wait for an in-flight request
 
-**Right:** Same scenario. On the retry, you look up `payment_id=456` and see that it has not yet produced a response. You wait for it to complete, then return the same result for both requests.
+If you have not finished the original request when a duplicate arrives, wait for it to complete and return the same response to both. Do not reject the duplicate, and do not return an error.
 
-### 3. Never Treat a Duplicate as an Error
+### 3. Never treat a duplicate as an error
 
-A duplicate request is a normal event caused by network retries or message redelivery. Returning an error for a duplicate breaks the retry contract and causes cascading failures in payment flows.
+A duplicate is a normal retry, not a fault. Returning an error for it breaks the contract and stalls the payment. Use the request's key (such as `paymentRef`) to tell a repeat apart from a genuinely new request.
 
-Your system should distinguish between an invalid request and a repeated valid one. The request identifier (such as `payment_id`) tells you which case you are handling.
+## Retries, rejections, and replay
 
-## Request Categories
+A sender that gets no acknowledgment retries with the original key and identical content; the receiver dedupes. A **rejection** is itself an acknowledgment, so the sender stops retrying — but it never consumes the key: to fix the problem the sender resubmits the same key with corrected fields, which t-0 re-evaluates from scratch. **Idempotent replay** — returning the original result with no new side effect — applies only to an accepted call; a rejected or declined call commits nothing to replay.
 
-Every network method declares one of two idempotency levels:
+Inbound asynchronous endpoints (`6`, `9`, `10`, `12`, `14`) acknowledge with `accepted` or `rejected { rejectionCode, ... }`. A genuinely different real-world action — a new on-chain settlement transaction, a second bank transfer — is a new event under a new key, reconciled out of band; it is not a correction of the old key.
 
-**IDEMPOTENT** — The request changes state (creates a payment, initiates a payout). Your system must deduplicate based on the business identifier in the request body. Retrying produces the same outcome as the original call.
+## Reliability
 
-**NO_SIDE_EFFECTS** — The request is read-only (fetching a quote, checking payment status). No deduplication is needed. These methods are safe for aggressive retry policies and caching strategies.
+- **At-least-once delivery** on the asynchronous endpoints (`6`, `7`, `8`, `9`, `10`, `11`, `12`, `13`, `14`, `15`). The sender retries with backoff until the receiver acknowledges.
+- **t-0 is the source of truth** for intent state and for on-chain settlement verification. The Acquirer, Issuer, and LP reconcile against t-0, not against each other.
+- **Reconciliation timers** — t-0 runs mode-specific escalation timers (thresholds are contractual parameters):
+  - *USDT mode* — an intent stuck in `SETTLEMENT_PENDING` past T₁ (its `9` not yet verified) escalates to the Issuer.
+  - *Fiat mode, bank-rails leg* — no `10 FiatSettlementSent` within T₂ of authorization escalates to the LP.
+  - *Fiat mode, confirmation leg* — no `12 SettlementReceived` within T₃ of `11 SettlementInitiated` escalates to the Acquirer.
+  - *Fiat mode, Issuer→LP reimbursement* — the Issuer's `9` to the LP wallet not verified within T₄ escalates to the Issuer.
 
-## What This Means for Your Integration
-
-- **Build retry-safe endpoints.** Store the result of every state-changing operation and return it when the same identifier appears again.
-- **Use business identifiers for deduplication.** Each request carries a field (like `payment_id`) that uniquely identifies the operation. Use it as your deduplication key.
-- **Keep responses available for the lifetime of the resource.** Payment data has regulatory retention requirements. The stored response should remain retrievable for as long as the underlying resource exists.
+The Issuer is the responsible party for every unsettled obligation; it is never passed back to the Acquirer.

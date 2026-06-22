@@ -1,5 +1,5 @@
 ---
-weight: 334
+weight: 333
 title: "Liquidity Provider"
 description: ""
 icon: "article"
