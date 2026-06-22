@@ -108,13 +108,17 @@ Fiat settlement runs as **two independent legs**. In the normal order the Issuer
 
 ## Payment intent states (t-0 ledger)
 
-```
-OPEN ──expiresAt reached (t-0 clock)──▶ EXPIRED                              (terminal)
-       │
-       6 accepted
-       ▼
-AUTHORIZED ──7 sent, USDt mode──▶ SETTLEMENT_PENDING ──9 verified──▶ SETTLED  (terminal)
-AUTHORIZED ──7 sent, fiat mode──▶ AWAITING_FIAT ──────12 received──▶ SETTLED  (terminal)
+```mermaid
+stateDiagram-v2
+    [*] --> OPEN
+    OPEN --> EXPIRED: expiresAt reached (t-0 clock)
+    OPEN --> AUTHORIZED: 6 accepted
+    AUTHORIZED --> SETTLEMENT_PENDING: 7 sent, USDt mode
+    AUTHORIZED --> AWAITING_FIAT: 7 sent, fiat mode
+    SETTLEMENT_PENDING --> SETTLED: 9 verified
+    AWAITING_FIAT --> SETTLED: 12 received
+    SETTLED --> [*]
+    EXPIRED --> [*]
 ```
 
 The intent's lifecycle tracks **only the Acquirer-facing settlement**. In fiat mode the Issuer→LP `9 SettlementSent` is booked on a separate settlement record (the Issuer→LP reimbursement ledger) and **does not appear in this state machine** — it never moves the intent.
