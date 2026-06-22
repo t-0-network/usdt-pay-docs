@@ -1,5 +1,10 @@
 syntax = "proto3";
 
+// MODELING DRAFT — not yet wired into any buf module.
+// Eventual home: proto/tzero/v1/pay/issuer.proto. The Issuer ↔ t-0 edge:
+// IssuerService is hosted by t-0 and called by the Issuer;
+// IssuerCallbackService is implemented by the Issuer and called by t-0.
+
 package tzero.v1.pay;
 
 import "buf/validate/validate.proto";

@@ -1,5 +1,10 @@
 syntax = "proto3";
 
+// MODELING DRAFT — not yet wired into any buf module.
+// Eventual home: proto/tzero/v1/pay/lp.proto. The LP ↔ t-0 edge:
+// LpService is hosted by t-0 and called by the LP;
+// LpCallbackService is implemented by the LP and called by t-0.
+
 package tzero.v1.pay;
 
 import "buf/validate/validate.proto";
