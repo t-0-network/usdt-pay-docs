@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package tzero.v1.pay;
+
+import "buf/validate/validate.proto";
+
+/**
+ * On-chain network a USDt leg moves over. Local to the pay contract.
+ * Launch-live: TRON, ETH, BSC. Six more (Polygon, Arbitrum, Optimism, Base,
+ * Avalanche, Solana) are announced as upcoming and added here as they go live.
+ * Wire names are the full chain names (qr_api.md Conventions); these enum
+ * labels are the internal mapping.
+ */
+enum Blockchain {
+  BLOCKCHAIN_UNSPECIFIED = 0;
+  BLOCKCHAIN_TRON = 10;
+  BLOCKCHAIN_ETH = 20;
+  BLOCKCHAIN_BSC = 30;
+}
+
+/**
+ * One on-chain USDt transfer made by the customer. The only payment-method
+ * variant in the MVP.
+ */
+message UsdtOnChainPayment {
+  Blockchain chain = 10 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // Hash of the customer's USDt transfer.
+  string on_chain_tx_hash = 20 [(buf.validate.field).string = {min_len: 1}];
+
+  // Customer's source wallet address, for receipt and audit.
+  string sender_address = 30 [(buf.validate.field).string = {min_len: 1}];
+}
+
+/**
+ * One selectable QR payment option for an intent — the renderable payload is
+ * chain-native and encoded by the POS without modification.
+ */
+message QrOption {
+  Blockchain chain = 10 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // One-time deposit address reserved for this intent on `chain`.
+  string deposit_address = 20 [(buf.validate.field).string = {min_len: 1}];
+
+  // Chain-native URI (e.g. ERC-681 on EVM) the POS encodes as a QR image as-is.
+  string renderable_payload = 30 [(buf.validate.field).string = {min_len: 1}];
+}
+
+/**
+ * USDt-on-chain settlement payload, shared by the issuer's SettlementSent and
+ * the acquirer's SettlementCompleted usdt variant.
+ */
+message OnChainSettlementDetails {
+  // Hash of the settlement transaction.
+  string on_chain_tx_hash = 10 [(buf.validate.field).string = {min_len: 1}];
+
+  Blockchain chain = 20 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // Registered settlement wallet on `chain` — the Acquirer's (USDt mode) or the LP's (fiat mode).
+  string destination_address = 30 [(buf.validate.field).string = {min_len: 1}];
+}
+
+/**
+ * Fiat bank-rails settlement detail shape. Currently unused on the wire: fiat
+ * mode has no SettlementCompleted (`13`) — the Acquirer's SettlementReceived
+ * (`12`) is terminal — and SettlementInitiated (`11`) carries these fields
+ * inline. Retained as the canonical fiat-settlement detail shape.
+ */
+message FiatSettlementDetails {
+  // t-0's identifier for the LP that settled; scopes `bank_transfer_ref`.
+  uint64 lp_id = 10 [(buf.validate.field).uint64.gt = 0];
+
+  // ISO 4217 currency code delivered (e.g. COP).
+  string local_currency = 20 [(buf.validate.field).string = {
+    len: 3
+    pattern: "^[A-Z]{3}$"
+  }];
+
+  // LP-minted reference on the bank-rails transfer.
+  string bank_transfer_ref = 40 [(buf.validate.field).string = {min_len: 1}];
+}

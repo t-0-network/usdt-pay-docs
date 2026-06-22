@@ -1,0 +1,85 @@
+---
+weight: %%WEIGHT%%
+title: "%%TITLE%%"
+description: ""
+icon: "article"
+date: "2025-06-16T12:09:09+02:00"
+lastmod: "2025-06-16T12:09:09+02:00"
+draft: false
+toc: true
+---
+{{- range .Files}}{{if eq .Name "%%ACTIVE_FILE%%"}}
+{{range .Services}}
+<a name="{{.FullName | anchor}}"></a>
+
+## {{.Name}}
+{{.Description}}
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+{{range .Methods -}}
+{{- $rqft := .RequestFullType -}}{{- $rqlt := .RequestLongType -}}{{- $rqLocal := false -}}{{- $rqSfa := "" -}}
+{{- range $.Files -}}{{- $fa := .Name | anchor -}}{{- $act := eq .Name "%%ACTIVE_FILE%%" -}}
+{{- range .Messages -}}{{- if eq .FullName $rqft -}}{{- if $act -}}{{- $rqLocal = true -}}{{- else -}}{{- $rqSfa = $fa -}}{{- end -}}{{- end -}}{{- end -}}
+{{- range .Enums -}}{{- if eq .FullName $rqft -}}{{- if $act -}}{{- $rqLocal = true -}}{{- else -}}{{- $rqSfa = $fa -}}{{- end -}}{{- end -}}{{- end -}}
+{{- end -}}
+{{- $rsft := .ResponseFullType -}}{{- $rslt := .ResponseLongType -}}{{- $rsLocal := false -}}{{- $rsSfa := "" -}}
+{{- range $.Files -}}{{- $fa := .Name | anchor -}}{{- $act := eq .Name "%%ACTIVE_FILE%%" -}}
+{{- range .Messages -}}{{- if eq .FullName $rsft -}}{{- if $act -}}{{- $rsLocal = true -}}{{- else -}}{{- $rsSfa = $fa -}}{{- end -}}{{- end -}}{{- end -}}
+{{- range .Enums -}}{{- if eq .FullName $rsft -}}{{- if $act -}}{{- $rsLocal = true -}}{{- else -}}{{- $rsSfa = $fa -}}{{- end -}}{{- end -}}{{- end -}}
+{{- end -}}
+  | {{.Name}} | {{if $rqLocal}}[{{$rqlt}}](#{{$rqft | anchor}}){{else if $rqSfa}}[{{$rqlt}}](%%FILEREF:{{$rqSfa}}%%#{{$rqft | anchor}}){{else}}[{{$rqlt}}](%%SCALAR%%#{{$rqft | anchor}}){{end}}{{if .RequestStreaming}} stream{{end}} | {{if $rsLocal}}[{{$rslt}}](#{{$rsft | anchor}}){{else if $rsSfa}}[{{$rslt}}](%%FILEREF:{{$rsSfa}}%%#{{$rsft | anchor}}){{else}}[{{$rslt}}](%%SCALAR%%#{{$rsft | anchor}}){{end}}{{if .ResponseStreaming}} stream{{end}} | {{.Description | replace "\n" " "}} |
+{{end}}
+{{end}} <!-- end services -->
+{{end}}{{end}}
+
+##  Requests And Response Types
+{{range .Files}}{{if eq .Name "%%ACTIVE_FILE%%"}}
+{{range .Messages}}
+<a name="{{.FullName | anchor}}"></a>
+
+### {{.LongName}}
+{{.Description}}
+
+{{if .HasFields}}
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+{{range .Fields -}}
+{{- $ft := .FullType -}}{{- $lt := .LongType -}}{{- $isLocal := false -}}{{- $sfa := "" -}}
+{{- range $.Files -}}{{- $fa := .Name | anchor -}}{{- $act := eq .Name "%%ACTIVE_FILE%%" -}}
+{{- range .Messages -}}{{- if eq .FullName $ft -}}{{- if $act -}}{{- $isLocal = true -}}{{- else -}}{{- $sfa = $fa -}}{{- end -}}{{- end -}}{{- end -}}
+{{- range .Enums -}}{{- if eq .FullName $ft -}}{{- if $act -}}{{- $isLocal = true -}}{{- else -}}{{- $sfa = $fa -}}{{- end -}}{{- end -}}{{- end -}}
+{{- end -}}
+  | {{.Name}} | {{if $isLocal}}[{{$lt}}](#{{$ft | anchor}}){{else if $sfa}}[{{$lt}}](%%FILEREF:{{$sfa}}%%#{{$ft | anchor}}){{else}}[{{$lt}}](%%SCALAR%%#{{$ft | anchor}}){{end}} | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{.Description | replace "\n" " "}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+{{end}}
+
+{{else}}
+This message has no fields defined.
+
+{{end}}
+
+{{if .HasExtensions}}
+| Extension | Type | Base | Number | Description |
+| --------- | ---- | ---- | ------ | ----------- |
+{{range .Extensions -}}
+  | {{.Name}} | {{.LongType}} | {{.ContainingLongType}} | {{.Number}} | {{.Description | replace "\n" " "}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+{{end}}
+{{end}}
+
+{{end}} <!-- end messages -->
+
+{{range .Enums}}
+<a name="{{.FullName | anchor}}"></a>
+
+### {{.LongName}}
+{{.Description}}
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+{{range .Values -}}
+  | {{.Name}} | {{.Number}} | {{.Description | replace "\n" " "}} |
+{{end}}
+
+{{end}} <!-- end enums -->
+
+{{end}}{{end}}
