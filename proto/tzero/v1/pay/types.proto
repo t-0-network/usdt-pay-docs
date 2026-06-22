@@ -1,5 +1,10 @@
 syntax = "proto3";
 
+// MODELING DRAFT — not yet wired into any buf module.
+// Eventual home: proto/tzero/v1/pay/types.proto (new independent `pay` service).
+// Authored from docs/concepts/qr/{qr_api.md,qr_glossary.md} to be
+// consistency-checked against docs/concepts/qr/qr_schema.sql.
+
 package tzero.v1.pay;
 
 import "buf/validate/validate.proto";
