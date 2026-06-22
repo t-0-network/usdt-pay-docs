@@ -24,6 +24,7 @@ jobs:
       # (grpc/genproto/protobuf pseudo-versions) flakes on `git fetch --unshallow`
       # otherwise ("shallow file has changed"). The proxy serves all of them.
       GOPROXY: https://proxy.golang.org
+      HUGO_MODULE_PROXY: https://proxy.golang.org
     steps:
       - name: Install Hugo CLI
         run: |
