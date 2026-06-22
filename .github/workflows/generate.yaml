@@ -21,7 +21,7 @@ jobs:
           repositories: usdt-pay-docs
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           show-progress: false
           token: ${{ steps.app-token.outputs.token }}
