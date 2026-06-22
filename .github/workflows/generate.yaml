@@ -11,9 +11,9 @@ jobs:
   generate:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
-      # Same gopkg.in direct-git fragility as the Hugo deploy: route module
-      # fetches through the reliable public proxy.
-      GOPROXY: https://proxy.golang.org,direct
+      # Proxy-only (no ,direct): same reason as the Hugo deploy — the legacy
+      # protoc-gen-doc deps flake on git `unshallow`; the proxy serves them all.
+      GOPROXY: https://proxy.golang.org
     steps:
       - name: Generate GitHub APP Token
         uses: actions/create-github-app-token@v3

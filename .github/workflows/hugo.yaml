@@ -19,9 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUGO_VERSION: 0.157.0
-      # Route module fetches through the public proxy rather than direct git
-      # against the flaky gopkg.in (502s), which Hugo's module deps resolve from.
-      GOPROXY: https://proxy.golang.org,direct
+      # Proxy-only (no ,direct): force zip downloads from the module proxy and
+      # never fall back to git. The legacy protoc-gen-doc dep chain
+      # (grpc/genproto/protobuf pseudo-versions) flakes on `git fetch --unshallow`
+      # otherwise ("shallow file has changed"). The proxy serves all of them.
+      GOPROXY: https://proxy.golang.org
     steps:
       - name: Install Hugo CLI
         run: |
@@ -48,8 +50,8 @@ jobs:
         uses: actions/cache@v5
         with:
           path: /tmp/hugo_cache
-          key: hugo-modules-${{ hashFiles('go.sum') }}
-          restore-keys: hugo-modules-
+          key: hugo-modules-v2-${{ hashFiles('go.sum') }}
+          restore-keys: hugo-modules-v2-
 
       - name: Build with Hugo
         env:
