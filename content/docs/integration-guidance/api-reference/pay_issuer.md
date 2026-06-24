@@ -46,10 +46,10 @@ and reservation expiry.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| payment_intent_id | [uint64](../scalar/#uint64) |  |  |
+| payment_intent_id | [uint64](../scalar/#uint64) |  | Intent the deposit addresses are reserved for. |
 | acquirer_id | [uint64](../scalar/#uint64) |  | t-0's stable id for the Acquirer; the Issuer resolves its settlement wallet from it. |
 | amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Amount the reserved addresses should accept. |
-| expires_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Absolute moment t-0 requires the reservation held until, on t-0's clock (t-0 sets a 60–120 second window in the MVP). |
+| expires_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Absolute moment t-0 requires the reservation held until, on t-0's clock (t-0 currently sets a 60–120 second window). |
 
 
 
@@ -120,7 +120,7 @@ ignore at graduation (or rename the method).
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| payment_intent_id | [uint64](../scalar/#uint64) |  |  |
+| payment_intent_id | [uint64](../scalar/#uint64) |  | Intent whose reservation expired. |
 | expired_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the Issuer released the deposit addresses. |
 
 
@@ -183,7 +183,7 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| payment_intent_id | [uint64](../scalar/#uint64) |  |  |
+| payment_intent_id | [uint64](../scalar/#uint64) |  | Intent the on-chain payment satisfies. |
 | amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Amount credited; must equal the intent's stored amount_usdt exactly. |
 | usdt_on_chain | [UsdtOnChainPayment](../pay_types/#tzero-v1-pay-UsdtOnChainPayment) |  |  |
 | received_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the Issuer treated the payment as final. |
@@ -249,10 +249,10 @@ This message has no fields defined.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | settlement_ref | [string](../scalar/#string) |  | Issuer's id for this USDt settlement; idempotency key, unique per Issuer. |
-| amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  |  |
+| amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Total USDt settled across the covered intents. |
 | settlement | [OnChainSettlementDetails](../pay_types/#tzero-v1-pay-OnChainSettlementDetails) |  | On-chain transaction, chain, and registered destination wallet for this settlement. |
-| settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears; per-intent amounts are read from t-0's ledger. |
-| settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  |  |
+| settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears; per-intent amounts are resolved by t-0 from the accepted intents. |
+| settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the Issuer broadcast the settlement transaction. |
 
 
 
