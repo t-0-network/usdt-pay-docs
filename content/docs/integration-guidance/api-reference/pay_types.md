@@ -14,27 +14,6 @@ toc: true
 ##  Requests And Response Types
 
 
-<a name="tzero-v1-pay-FiatSettlementDetails"></a>
-
-### FiatSettlementDetails
-Fiat bank-rails settlement detail shape. Currently unused on the wire: fiat
-mode has no SettlementCompleted (`13`) — the Acquirer's SettlementReceived
-(`12`) is terminal — and SettlementInitiated (`11`) carries these fields
-inline. Retained as the canonical fiat-settlement detail shape.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lp_id | [uint64](../scalar/#uint64) |  | t-0's identifier for the LP that settled; scopes `bank_transfer_ref`. |
-| local_currency | [string](../scalar/#string) |  | ISO 4217 currency code delivered (e.g. COP). |
-| bank_transfer_ref | [string](../scalar/#string) |  | LP-minted reference on the bank-rails transfer. |
-
-
-
-
-
-
-
 <a name="tzero-v1-pay-OnChainSettlementDetails"></a>
 
 ### OnChainSettlementDetails
@@ -45,7 +24,7 @@ the acquirer's SettlementCompleted usdt variant.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | on_chain_tx_hash | [string](../scalar/#string) |  | Hash of the settlement transaction. |
-| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  |  |
+| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  | Chain the settlement moved over. |
 | destination_address | [string](../scalar/#string) |  | Registered settlement wallet on `chain` — the Acquirer's (USDt mode) or the LP's (fiat mode). |
 
 
@@ -63,7 +42,7 @@ chain-native and encoded by the POS without modification.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  |  |
+| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  | Chain this deposit option pays on. |
 | deposit_address | [string](../scalar/#string) |  | One-time deposit address reserved for this intent on `chain`. |
 | renderable_payload | [string](../scalar/#string) |  | Chain-native URI (e.g. ERC-681 on EVM) the POS encodes as a QR image as-is. |
 
@@ -82,7 +61,7 @@ variant in the MVP.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  |  |
+| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  | Chain the customer's USDt transfer moved over. |
 | on_chain_tx_hash | [string](../scalar/#string) |  | Hash of the customer's USDt transfer. |
 | sender_address | [string](../scalar/#string) |  | Customer's source wallet address, for receipt and audit. |
 
@@ -100,8 +79,7 @@ variant in the MVP.
 On-chain network a USDt leg moves over. Local to the pay contract.
 Launch-live: TRON, ETH, BSC. Six more (Polygon, Arbitrum, Optimism, Base,
 Avalanche, Solana) are announced as upcoming and added here as they go live.
-Wire names are the full chain names (qr_api.md Conventions); these enum
-labels are the internal mapping.
+Wire names are the full chain names; these enum labels are the internal mapping.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
