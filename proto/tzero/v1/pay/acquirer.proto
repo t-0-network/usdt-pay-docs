@@ -62,12 +62,13 @@ service AcquirerCallbackService {
 // ── AcquirerService ──────────────────────────────────────────────────
 
 message GetPaymentQuoteRequest {
-  // ISO 4217 currency the merchant is quoting in (e.g. COP).
+  /** ISO 4217 currency the merchant is quoting in (e.g. COP). */
   string local_currency = 10 [(buf.validate.field).string = {
     len: 3
     pattern: "^[A-Z]{3}$"
   }];
 
+  /** Fiat amount the merchant wants to price. */
   tzero.v1.common.Decimal local_amount = 20 [
     (buf.validate.field).required = true,
     (buf.validate.field).cel = {
@@ -85,8 +86,10 @@ message GetPaymentQuoteResponse {
   }
 
   message Success {
+    /** t-0's id for the priced standing quote. */
     uint64 quote_id = 10 [(buf.validate.field).uint64.gt = 0];
 
+    /** USDt the customer pays for local_amount at fx_rate. */
     tzero.v1.common.Decimal amount_usdt = 20 [
       (buf.validate.field).required = true,
       (buf.validate.field).cel = {
@@ -95,7 +98,7 @@ message GetPaymentQuoteResponse {
       }
     ];
 
-    // Standing quote's rate, in units of local_currency per 1 USDt.
+    /** Standing quote's rate, in units of local_currency per 1 USDt. */
     tzero.v1.common.Decimal fx_rate = 30 [
       (buf.validate.field).required = true,
       (buf.validate.field).cel = {
@@ -104,7 +107,7 @@ message GetPaymentQuoteResponse {
       }
     ];
 
-    // Moment the standing quote stops standing on t-0's clock.
+    /** Moment the standing quote stops standing on t-0's clock. */
     google.protobuf.Timestamp expires_at = 40 [(buf.validate.field).required = true];
   }
 
@@ -122,12 +125,13 @@ message GetPaymentQuoteResponse {
 }
 
 message CreatePaymentIntentRequest {
-  // Sale identifier the Acquirer keeps in its own ledger; idempotency key, unique per Acquirer.
+  /** Sale identifier the Acquirer keeps in its own ledger; idempotency key, unique per Acquirer. */
   string payment_ref = 10 [(buf.validate.field).string = {
     min_len: 1
     max_len: 256
   }];
 
+  /** Fiat amount of the sale, in the settlement currency. */
   tzero.v1.common.Decimal local_amount = 30 [
     (buf.validate.field).required = true,
     (buf.validate.field).cel = {
@@ -136,7 +140,7 @@ message CreatePaymentIntentRequest {
     }
   ];
 
-  // The configured settlement mode selects exactly one terms variant.
+  /** The configured settlement mode selects exactly one terms variant. */
   oneof terms {
     option (buf.validate.oneof).required = true;
     UsdtSettlementTerms usdt_settlement = 40;
@@ -145,13 +149,13 @@ message CreatePaymentIntentRequest {
 
   /** Acquirer-supplied terms when it settles in USDt and runs its own FX. */
   message UsdtSettlementTerms {
-    // ISO 4217 currency the merchant quoted the customer in.
+    /** ISO 4217 currency the merchant quoted the customer in. */
     string local_currency = 10 [(buf.validate.field).string = {
       len: 3
       pattern: "^[A-Z]{3}$"
     }];
 
-    // Units of local_currency per 1 USDt, set by the Acquirer.
+    /** Units of local_currency per 1 USDt, set by the Acquirer. */
     tzero.v1.common.Decimal fx_rate = 20 [
       (buf.validate.field).required = true,
       (buf.validate.field).cel = {
@@ -163,7 +167,7 @@ message CreatePaymentIntentRequest {
 
   /** Reference to a standing quote when the Acquirer is settled in fiat via an LP. */
   message FiatSettlementTerms {
-    // Standing quote obtained from GetPaymentQuote; supplies local_currency and fx_rate.
+    /** Standing quote obtained from GetPaymentQuote; supplies local_currency and fx_rate. */
     uint64 quote_id = 10 [(buf.validate.field).uint64.gt = 0];
   }
 }
@@ -176,14 +180,16 @@ message CreatePaymentIntentResponse {
   }
 
   message Success {
+    /** t-0's id for the opened intent. */
     uint64 payment_intent_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-    // ISO 4217; echoed in USDt mode, resolved from the quote in fiat mode.
+    /** ISO 4217; echoed in USDt mode, resolved from the quote in fiat mode. */
     string local_currency = 20 [(buf.validate.field).string = {
       len: 3
       pattern: "^[A-Z]{3}$"
     }];
 
+    /** Fiat amount of the sale. */
     tzero.v1.common.Decimal local_amount = 30 [
       (buf.validate.field).required = true,
       (buf.validate.field).cel = {
@@ -192,6 +198,7 @@ message CreatePaymentIntentResponse {
       }
     ];
 
+    /** Units of local_currency per 1 USDt locked for this intent. */
     tzero.v1.common.Decimal fx_rate = 40 [
       (buf.validate.field).required = true,
       (buf.validate.field).cel = {
@@ -200,7 +207,7 @@ message CreatePaymentIntentResponse {
       }
     ];
 
-    // Exact amount the customer pays, round(local_amount / fx_rate, 2dp, half-up).
+    /** Exact amount the customer pays, round(local_amount / fx_rate, 2dp, half-up). */
     tzero.v1.common.Decimal amount_usdt = 50 [
       (buf.validate.field).required = true,
       (buf.validate.field).cel = {
@@ -209,10 +216,10 @@ message CreatePaymentIntentResponse {
       }
     ];
 
-    // After this moment the Issuer releases the deposit addresses and the QR is invalid.
+    /** After this moment the Issuer releases the deposit addresses and the QR is invalid. */
     google.protobuf.Timestamp expires_at = 60 [(buf.validate.field).required = true];
 
-    // One option per chain the Issuer supports for this intent; the customer picks one.
+    /** One option per chain the Issuer supports for this intent; the customer picks one. */
     repeated QrOption qr_options = 70 [(buf.validate.field).repeated = {min_items: 1}];
   }
 
@@ -236,18 +243,19 @@ message CreatePaymentIntentResponse {
 }
 
 message SettlementReceivedRequest {
-  // t-0's id for the LP that sent the transfer, echoed from SettlementInitiated.
+  /** t-0's id for the LP that sent the transfer, echoed from SettlementInitiated. */
   uint64 lp_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-  // Reference on the received transfer, matched against the bank statement.
+  /** Reference on the received transfer, matched against the bank statement. */
   string bank_transfer_ref = 20 [(buf.validate.field).string = {min_len: 1}];
 
-  // ISO 4217 currency credited.
+  /** ISO 4217 currency credited. */
   string local_currency = 30 [(buf.validate.field).string = {
     len: 3
     pattern: "^[A-Z]{3}$"
   }];
 
+  /** Fiat amount credited to the Acquirer's account. */
   tzero.v1.common.Decimal amount_received = 40 [
     (buf.validate.field).required = true,
     (buf.validate.field).cel = {
@@ -256,6 +264,7 @@ message SettlementReceivedRequest {
     }
   ];
 
+  /** Moment the funds landed in the Acquirer's account. */
   google.protobuf.Timestamp received_at = 50 [(buf.validate.field).required = true];
 }
 
@@ -277,6 +286,8 @@ message SettlementReceivedResponse {
       REASON_AMOUNT_MISMATCH = 10;
       // No fiat settlement matches the (lp_id, bank_transfer_ref) pair.
       REASON_UNKNOWN_TRANSFER = 20;
+      // local_currency is not the currency t-0 recorded for the matched transfer; resend with the correct currency.
+      REASON_CURRENCY_MISMATCH = 30;
     }
   }
 }
@@ -284,70 +295,48 @@ message SettlementReceivedResponse {
 // ── AcquirerCallbackService ─────────────────────────────────────────────────
 
 message PaymentAuthorizedRequest {
+  /** Intent that was authorized. */
   uint64 payment_intent_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-  // Echo of the Acquirer's CreatePaymentIntent payment_ref, to match the merchant order.
+  /**
+   * Echo of the Acquirer's CreatePaymentIntent payment_ref — a non-authoritative
+   * correlation ref, so the merchant order can be matched by either this or
+   * payment_intent_id.
+   */
   string payment_ref = 20 [(buf.validate.field).string = {min_len: 1}];
 
-  string local_currency = 30 [(buf.validate.field).string = {
-    len: 3
-    pattern: "^[A-Z]{3}$"
-  }];
-
-  tzero.v1.common.Decimal local_amount = 40 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).cel = {
-      message: "local_amount must be greater than zero"
-      expression: "this.unscaled > 0"
-    }
-  ];
-
-  tzero.v1.common.Decimal fx_rate = 50 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).cel = {
-      message: "fx_rate must be greater than zero"
-      expression: "this.unscaled > 0"
-    }
-  ];
-
-  tzero.v1.common.Decimal amount_usdt = 60 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).cel = {
-      message: "amount_usdt must be greater than zero"
-      expression: "this.unscaled > 0"
-    }
-  ];
-
-  // How the customer paid, relayed from PaymentReceived; always sent in both modes.
+  /** How the customer paid, relayed from PaymentReceived; always sent in both modes. */
   oneof payment_method {
     option (buf.validate.oneof).required = true;
-    UsdtOnChainPayment usdt_on_chain = 70;
+    UsdtOnChainPayment usdt_on_chain = 30;
   }
 
-  // Moment t-0 accepted PaymentReceived.
-  google.protobuf.Timestamp approved_at = 80 [(buf.validate.field).required = true];
+  /** Moment t-0 accepted PaymentReceived. */
+  google.protobuf.Timestamp approved_at = 40 [(buf.validate.field).required = true];
 }
 
 message PaymentAuthorizedResponse {}
 
 message SettlementInitiatedRequest {
-  // t-0's id for this fiat settlement (the fiatSettlementId); the bank-rails leg's key.
+  /** t-0's id for this fiat settlement; the bank-rails leg's key. */
   uint64 fiat_settlement_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-  // t-0's id for the LP that sent the transfer; scopes bank_transfer_ref.
+  /** t-0's id for the LP that sent the transfer; scopes bank_transfer_ref. */
   uint64 lp_id = 20 [(buf.validate.field).uint64.gt = 0];
 
-  // Reference the LP put on the bank-rails transfer; matched against the statement.
+  /** Reference the LP put on the bank-rails transfer; matched against the statement. */
   string bank_transfer_ref = 30 [(buf.validate.field).string = {min_len: 1}];
 
-  // Intents this settlement clears, resolved by t-0 from the LP's executions.
+  /** Intents this settlement clears, resolved by t-0 from the LP's executions. */
   repeated uint64 settled_payment_intent_ids = 40 [(buf.validate.field).repeated = {min_items: 1}];
 
+  /** ISO 4217 currency of the bank-rails transfer. */
   string local_currency = 50 [(buf.validate.field).string = {
     len: 3
     pattern: "^[A-Z]{3}$"
   }];
 
+  /** Fiat amount the LP transferred. */
   tzero.v1.common.Decimal settlement_amount = 60 [
     (buf.validate.field).required = true,
     (buf.validate.field).cel = {
@@ -356,15 +345,17 @@ message SettlementInitiatedRequest {
     }
   ];
 
+  /** Moment the LP initiated the bank-rails transfer. */
   google.protobuf.Timestamp initiated_at = 80 [(buf.validate.field).required = true];
 }
 
 message SettlementInitiatedResponse {}
 
 message SettlementCompletedRequest {
+  /** t-0's id for the settlement being completed. */
   uint64 settlement_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-  // Amount the Acquirer actually received; currency set by the settlement variant.
+  /** Amount the Acquirer actually received; currency set by the settlement variant. */
   tzero.v1.common.Decimal settlement_amount = 20 [
     (buf.validate.field).required = true,
     (buf.validate.field).cel = {
@@ -373,12 +364,16 @@ message SettlementCompletedRequest {
     }
   ];
 
+  /** Intents this settlement clears. */
   repeated uint64 settled_payment_intent_ids = 30 [(buf.validate.field).repeated = {min_items: 1}];
 
+  /** Moment the settlement reached the Acquirer. */
   google.protobuf.Timestamp settled_at = 40 [(buf.validate.field).required = true];
 
-  // The on-chain USDt settlement that reached the Acquirer. USDt mode only —
-  // fiat mode has no SettlementCompleted (the Acquirer's SettlementReceived is terminal).
+  /**
+   * The on-chain USDt settlement that reached the Acquirer. USDt mode only —
+   * fiat mode has no SettlementCompleted (the Acquirer's SettlementReceived is terminal).
+   */
   OnChainSettlementDetails settlement = 50 [(buf.validate.field).required = true];
 }
 
@@ -391,34 +386,17 @@ message SettlementCompletedResponse {}
 // `AcquirerCallbackServicePaymentExpiredRequest`, so this short form needs a
 // lint ignore at graduation (or rename the method).
 message AcquirerPaymentExpiredRequest {
+  /** Intent that expired. */
   uint64 payment_intent_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-  // Echo of the Acquirer's CreatePaymentIntent payment_ref.
+  /**
+   * Echo of the Acquirer's CreatePaymentIntent payment_ref — a non-authoritative
+   * correlation ref the Acquirer can match by, alongside payment_intent_id.
+   */
   string payment_ref = 20 [(buf.validate.field).string = {min_len: 1}];
 
-  string local_currency = 30 [(buf.validate.field).string = {
-    len: 3
-    pattern: "^[A-Z]{3}$"
-  }];
-
-  tzero.v1.common.Decimal local_amount = 40 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).cel = {
-      message: "local_amount must be greater than zero"
-      expression: "this.unscaled > 0"
-    }
-  ];
-
-  tzero.v1.common.Decimal fx_rate = 50 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).cel = {
-      message: "fx_rate must be greater than zero"
-      expression: "this.unscaled > 0"
-    }
-  ];
-
-  // Moment the intent became terminal.
-  google.protobuf.Timestamp expired_at = 60 [(buf.validate.field).required = true];
+  /** Moment the intent became terminal. */
+  google.protobuf.Timestamp expired_at = 30 [(buf.validate.field).required = true];
 }
 
 message AcquirerPaymentExpiredResponse {}

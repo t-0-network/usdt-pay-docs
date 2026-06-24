@@ -47,9 +47,10 @@ service IssuerCallbackService {
 // ── IssuerService ────────────────────────────────────────────────────
 
 message PaymentReceivedRequest {
+  /** Intent the on-chain payment satisfies. */
   uint64 payment_intent_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-  // Amount credited; must equal the intent's stored amount_usdt exactly.
+  /** Amount credited; must equal the intent's stored amount_usdt exactly. */
   tzero.v1.common.Decimal amount_usdt = 20 [
     (buf.validate.field).required = true,
     (buf.validate.field).cel = {
@@ -58,13 +59,13 @@ message PaymentReceivedRequest {
     }
   ];
 
-  // The payment instrument; the MVP's only variant is usdt_on_chain.
+  /** The payment instrument; the MVP's only variant is usdt_on_chain. */
   oneof payment_method {
     option (buf.validate.oneof).required = true;
     UsdtOnChainPayment usdt_on_chain = 30;
   }
 
-  // Moment the Issuer treated the payment as final.
+  /** Moment the Issuer treated the payment as final. */
   google.protobuf.Timestamp received_at = 40 [(buf.validate.field).required = true];
 }
 
@@ -93,9 +94,10 @@ message PaymentReceivedResponse {
 }
 
 message SettlementSentRequest {
-  // Issuer's id for this USDt settlement; idempotency key, unique per Issuer.
+  /** Issuer's id for this USDt settlement; idempotency key, unique per Issuer. */
   string settlement_ref = 10 [(buf.validate.field).string = {min_len: 1}];
 
+  /** Total USDt settled across the covered intents. */
   tzero.v1.common.Decimal amount_usdt = 20 [
     (buf.validate.field).required = true,
     (buf.validate.field).cel = {
@@ -104,12 +106,13 @@ message SettlementSentRequest {
     }
   ];
 
-  // On-chain transaction, chain, and registered destination wallet for this settlement.
+  /** On-chain transaction, chain, and registered destination wallet for this settlement. */
   OnChainSettlementDetails settlement = 30 [(buf.validate.field).required = true];
 
-  // Intents this settlement clears; per-intent amounts are read from t-0's ledger.
+  /** Intents this settlement clears; per-intent amounts are resolved by t-0 from the accepted intents. */
   repeated uint64 settled_payment_intent_ids = 40 [(buf.validate.field).repeated = {min_items: 1}];
 
+  /** Moment the Issuer broadcast the settlement transaction. */
   google.protobuf.Timestamp settled_at = 50 [(buf.validate.field).required = true];
 }
 
@@ -125,7 +128,7 @@ message SettlementSentResponse {
   message Rejected {
     Reason reason = 10 [(buf.validate.field).enum.not_in = 0];
 
-    // Intents that failed verification within the batch.
+    /** Intents that failed verification within the batch. */
     repeated uint64 failing_intent_ids = 20;
 
     enum Reason {
@@ -149,9 +152,10 @@ message SettlementSentResponse {
 // `IssuerServicePaymentExpiredRequest`, so this short form needs a lint
 // ignore at graduation (or rename the method).
 message IssuerPaymentExpiredRequest {
+  /** Intent whose reservation expired. */
   uint64 payment_intent_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-  // Moment the Issuer released the deposit addresses.
+  /** Moment the Issuer released the deposit addresses. */
   google.protobuf.Timestamp expired_at = 20 [(buf.validate.field).required = true];
 }
 
@@ -178,12 +182,13 @@ message IssuerPaymentExpiredResponse {
 // ── IssuerCallbackService ───────────────────────────────────────────────────
 
 message CreatePaymentInstructionsRequest {
+  /** Intent the deposit addresses are reserved for. */
   uint64 payment_intent_id = 10 [(buf.validate.field).uint64.gt = 0];
 
-  // t-0's stable id for the Acquirer; the Issuer resolves its settlement wallet from it.
+  /** t-0's stable id for the Acquirer; the Issuer resolves its settlement wallet from it. */
   uint64 acquirer_id = 20 [(buf.validate.field).uint64.gt = 0];
 
-  // Amount the reserved addresses should accept.
+  /** Amount the reserved addresses should accept. */
   tzero.v1.common.Decimal amount_usdt = 30 [
     (buf.validate.field).required = true,
     (buf.validate.field).cel = {
@@ -192,8 +197,10 @@ message CreatePaymentInstructionsRequest {
     }
   ];
 
-  // Absolute moment t-0 requires the reservation held until, on t-0's clock
-  // (t-0 sets a 60–120 second window in the MVP).
+  /**
+   * Absolute moment t-0 requires the reservation held until, on t-0's clock
+   * (t-0 currently sets a 60–120 second window).
+   */
   google.protobuf.Timestamp expires_at = 40 [(buf.validate.field).timestamp.gt_now = true];
 }
 
@@ -205,10 +212,10 @@ message CreatePaymentInstructionsResponse {
   }
 
   message Success {
-    // One option per chain the Issuer supports for this intent.
+    /** One option per chain the Issuer supports for this intent. */
     repeated QrOption qr_options = 10 [(buf.validate.field).repeated = {min_items: 1}];
 
-    // Absolute expiry of the reservation.
+    /** Absolute expiry of the reservation. */
     google.protobuf.Timestamp expires_at = 20 [(buf.validate.field).required = true];
   }
 
