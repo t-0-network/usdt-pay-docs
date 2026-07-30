@@ -97,7 +97,8 @@ variant in the MVP.
 <a name="tzero-v1-pay-Blockchain"></a>
 
 ### Blockchain
-On-chain network a USDt leg moves over. Local to the pay contract.
+On-chain network a USDt leg moves over. Local to the pay contract, which is
+an independent service and shares no types with `tzero.v1.common`.
 Launch-live: TRON, ETH, BSC. Six more (Polygon, Arbitrum, Optimism, Base,
 Avalanche, Solana) are announced as upcoming and added here as they go live.
 Wire names are the full chain names; these enum labels are the internal mapping.
