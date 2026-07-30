@@ -50,8 +50,8 @@ its self-initiated fiat settlements. Fiat mode only.
 | quote_id | [uint64](../scalar/#uint64) |  | t-0's id for the standing quote this execution is under. |
 | quote_ref | [string](../scalar/#string) |  | LP's own identifier for that quote — a non-authoritative correlation echo. Lets the LP attribute the execution even when it arrives before the LP has recorded t-0's quote_id (publish-vs-execute race). |
 | acquirer_id | [uint64](../scalar/#uint64) |  | t-0's stable id for the Acquirer; the LP resolves the registered bank destination from it. |
-| local_amount | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Fiat amount owed to the Acquirer for this sale, in the standing quote's currency. |
-| amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | USDt the LP receives at settlement for this sale. |
+| local_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount owed to the Acquirer for this sale, in the standing quote's currency. |
+| amount_usdt | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | USDt the LP receives at settlement for this sale. |
 | executed_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment t-0 bound the LP to this execution. |
 
 
@@ -84,7 +84,7 @@ This message has no fields defined.
 | bank_transfer_ref | [string](../scalar/#string) |  | Reference on the bank-rails transfer; idempotency key, unique per LP. |
 | settled_execution_ids | [uint64](../scalar/#uint64) | repeated | Executions this settlement clears, in the LP's execution-space. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency delivered; matches the covered executions' currency. |
-| settlement_amount | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Local-fiat amount delivered; must equal the sum of the covered executions' local amounts. |
+| settlement_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Local-fiat amount delivered; must equal the sum of the covered executions' local amounts. |
 | destination_account | [string](../scalar/#string) |  | Acquirer's registered bank destination the fiat was sent to. |
 | settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the LP released the bank-rails transfer. |
 
@@ -151,9 +151,9 @@ This message has no fields defined.
 | ----- | ---- | ----- | ----------- |
 | quote_ref | [string](../scalar/#string) |  | LP's identifier for this quote; idempotency key, unique per LP. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency the quote prices (e.g. COP). |
-| fx_rate | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Rate committed, in units of local_currency per 1 USDt. |
-| min_amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Smallest single sale this quote may price, in USDt (domain rule: at least 0.01). |
-| max_amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Largest single sale this quote may price, in USDt (domain rule: at least min_amount_usdt). |
+| fx_rate | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Rate committed, in units of local_currency per 1 USDt. |
+| min_amount_usdt | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Smallest single sale this quote may price, in USDt (domain rule: at least 0.01). |
+| max_amount_usdt | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Largest single sale this quote may price, in USDt (domain rule: at least min_amount_usdt). |
 | expires_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the quote stops standing, on t-0's clock. |
 
 

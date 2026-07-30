@@ -14,6 +14,27 @@ toc: true
 ##  Requests And Response Types
 
 
+<a name="tzero-v1-pay-Decimal"></a>
+
+### Decimal
+Fixed-point monetary amount: unscaled * 10^exponent, so 123.45 is
+unscaled=12345, exponent=-2. Local to the pay contract — `pay` is an
+independent service and deliberately shares no types with `tzero.v1.common`,
+so a participant's generated code carries exactly one Decimal and one
+Blockchain.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| unscaled | [int64](../scalar/#int64) |  |  |
+| exponent | [int32](../scalar/#int32) |  |  |
+
+
+
+
+
+
+
 <a name="tzero-v1-pay-OnChainSettlementDetails"></a>
 
 ### OnChainSettlementDetails
@@ -76,7 +97,8 @@ variant in the MVP.
 <a name="tzero-v1-pay-Blockchain"></a>
 
 ### Blockchain
-On-chain network a USDt leg moves over. Local to the pay contract.
+On-chain network a USDt leg moves over. Local to the pay contract, which is
+an independent service and shares no types with `tzero.v1.common`.
 Launch-live: TRON, ETH, BSC. Six more (Polygon, Arbitrum, Optimism, Base,
 Avalanche, Solana) are announced as upcoming and added here as they go live.
 Wire names are the full chain names; these enum labels are the internal mapping.

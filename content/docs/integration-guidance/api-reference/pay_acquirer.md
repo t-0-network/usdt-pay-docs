@@ -86,7 +86,7 @@ This message has no fields defined.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | payment_ref | [string](../scalar/#string) |  | Sale identifier the Acquirer keeps in its own ledger; idempotency key, unique per Acquirer. |
-| local_amount | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Fiat amount of the sale, in the settlement currency. |
+| local_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount of the sale, in the settlement currency. |
 | usdt_settlement | [CreatePaymentIntentRequest.UsdtSettlementTerms](#tzero-v1-pay-CreatePaymentIntentRequest-UsdtSettlementTerms) |  |  |
 | fiat_settlement | [CreatePaymentIntentRequest.FiatSettlementTerms](#tzero-v1-pay-CreatePaymentIntentRequest-FiatSettlementTerms) |  |  |
 
@@ -121,7 +121,7 @@ Acquirer-supplied terms when it settles in USDt and runs its own FX.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency the merchant quoted the customer in. |
-| fx_rate | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Units of local_currency per 1 USDt, set by the Acquirer. |
+| fx_rate | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Units of local_currency per 1 USDt, set by the Acquirer. |
 
 
 
@@ -172,11 +172,11 @@ Acquirer-supplied terms when it settles in USDt and runs its own FX.
 | ----- | ---- | ----- | ----------- |
 | payment_intent_id | [uint64](../scalar/#uint64) |  | t-0's id for the opened intent. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217; echoed in USDt mode, resolved from the quote in fiat mode. |
-| local_amount | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Fiat amount of the sale. |
-| fx_rate | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Units of local_currency per 1 USDt locked for this intent. |
-| amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Exact amount the customer pays, round(local_amount / fx_rate, 2dp, half-up). |
+| local_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount of the sale. |
+| fx_rate | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Units of local_currency per 1 USDt locked for this intent. |
+| amount_usdt | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Exact amount the customer pays, round(local_amount / fx_rate, 2dp, half-up). |
 | expires_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | After this moment the Issuer releases the deposit addresses and the QR is invalid. |
-| qr_options | [QrOption](../pay_types/#tzero-v1-pay-QrOption) | repeated | One option per chain the Issuer supports for this intent; the customer picks one. |
+| qr_options | [QrOption](../pay_common/#tzero-v1-pay-QrOption) | repeated | One option per chain the Issuer supports for this intent; the customer picks one. |
 
 
 
@@ -193,7 +193,7 @@ Acquirer-supplied terms when it settles in USDt and runs its own FX.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency the merchant is quoting in (e.g. COP). |
-| local_amount | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Fiat amount the merchant wants to price. |
+| local_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount the merchant wants to price. |
 
 
 
@@ -243,8 +243,8 @@ Acquirer-supplied terms when it settles in USDt and runs its own FX.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | quote_id | [uint64](../scalar/#uint64) |  | t-0's id for the priced standing quote. |
-| amount_usdt | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | USDt the customer pays for local_amount at fx_rate. |
-| fx_rate | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Standing quote's rate, in units of local_currency per 1 USDt. |
+| amount_usdt | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | USDt the customer pays for local_amount at fx_rate. |
+| fx_rate | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Standing quote's rate, in units of local_currency per 1 USDt. |
 | expires_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the standing quote stops standing on t-0's clock. |
 
 
@@ -263,7 +263,7 @@ Acquirer-supplied terms when it settles in USDt and runs its own FX.
 | ----- | ---- | ----- | ----------- |
 | payment_intent_id | [uint64](../scalar/#uint64) |  | Intent that was authorized. |
 | payment_ref | [string](../scalar/#string) |  | Echo of the Acquirer's CreatePaymentIntent payment_ref — a non-authoritative correlation ref, so the merchant order can be matched by either this or payment_intent_id. |
-| usdt_on_chain | [UsdtOnChainPayment](../pay_types/#tzero-v1-pay-UsdtOnChainPayment) |  |  |
+| usdt_on_chain | [UsdtOnChainPayment](../pay_common/#tzero-v1-pay-UsdtOnChainPayment) |  |  |
 | approved_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment t-0 accepted PaymentReceived. |
 
 
@@ -294,10 +294,10 @@ This message has no fields defined.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | settlement_id | [uint64](../scalar/#uint64) |  | t-0's id for the settlement being completed. |
-| settlement_amount | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Amount the Acquirer actually received; currency set by the settlement variant. |
+| settlement_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Amount the Acquirer actually received; currency set by the settlement variant. |
 | settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears. |
 | settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the settlement reached the Acquirer. |
-| settlement | [OnChainSettlementDetails](../pay_types/#tzero-v1-pay-OnChainSettlementDetails) |  | The on-chain USDt settlement that reached the Acquirer. USDt mode only — fiat mode has no SettlementCompleted (the Acquirer's SettlementReceived is terminal). |
+| settlement | [OnChainSettlementDetails](../pay_common/#tzero-v1-pay-OnChainSettlementDetails) |  | The on-chain USDt settlement that reached the Acquirer. USDt mode only — fiat mode has no SettlementCompleted (the Acquirer's SettlementReceived is terminal). |
 
 
 
@@ -331,7 +331,7 @@ This message has no fields defined.
 | bank_transfer_ref | [string](../scalar/#string) |  | Reference the LP put on the bank-rails transfer; matched against the statement. |
 | settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears, resolved by t-0 from the LP's executions. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency of the bank-rails transfer. |
-| settlement_amount | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Fiat amount the LP transferred. |
+| settlement_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount the LP transferred. |
 | initiated_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the LP initiated the bank-rails transfer. |
 
 
@@ -364,7 +364,7 @@ This message has no fields defined.
 | lp_id | [uint64](../scalar/#uint64) |  | t-0's id for the LP that sent the transfer, echoed from SettlementInitiated. |
 | bank_transfer_ref | [string](../scalar/#string) |  | Reference on the received transfer, matched against the bank statement. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency credited. |
-| amount_received | [tzero.v1.common.Decimal](../common_common/#tzero-v1-common-Decimal) |  | Fiat amount credited to the Acquirer's account. |
+| amount_received | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount credited to the Acquirer's account. |
 | received_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the funds landed in the Acquirer's account. |
 
 
