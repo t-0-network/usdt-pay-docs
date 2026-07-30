@@ -14,6 +14,27 @@ toc: true
 ##  Requests And Response Types
 
 
+<a name="tzero-v1-pay-Decimal"></a>
+
+### Decimal
+Fixed-point monetary amount: unscaled * 10^exponent, so 123.45 is
+unscaled=12345, exponent=-2. Local to the pay contract — `pay` is an
+independent service and deliberately shares no types with `tzero.v1.common`,
+so a participant's generated code carries exactly one Decimal and one
+Blockchain.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| unscaled | [int64](../scalar/#int64) |  |  |
+| exponent | [int32](../scalar/#int32) |  |  |
+
+
+
+
+
+
+
 <a name="tzero-v1-pay-OnChainSettlementDetails"></a>
 
 ### OnChainSettlementDetails

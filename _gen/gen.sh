@@ -36,7 +36,6 @@ PAGES=(
     "tzero/v1/pay/issuer.proto|Issuer|332"
     "tzero/v1/pay/lp.proto|Liquidity Provider|333"
     "tzero/v1/pay/types.proto|Shared Types|337"
-    "tzero/v1/common/common.proto|Common|338"
 )
 
 # Derive ALL_PROTOS from PAGES (single source of truth)
