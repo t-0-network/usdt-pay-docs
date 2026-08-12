@@ -14,7 +14,7 @@ Every request between t-0 and a role (Acquirer, Issuer, or LP) is signed. Signin
 Each request carries three headers:
 
 - `X-Signature` — the hex-encoded ECDSA signature of the request body with the timestamp appended.
-- `X-Public-Key` — the hex-encoded public key for the signing key. Compressed (33 bytes) or uncompressed (65 bytes); compressed is preferred.
+- `X-Public-Key` — the hex-encoded public key for the signing key. Uncompressed only: 65 bytes, 130 hex characters, `0x` prefix optional.
 - `X-Signature-Timestamp` — the Unix timestamp in milliseconds used during signing.
 
 To sign a request: take the current Unix timestamp in milliseconds as a 64-bit unsigned integer encoded little-endian, append it to the request body, hash the result with Keccak-256, and sign the hash with the sender's ECDSA private key.
@@ -22,5 +22,7 @@ To sign a request: take the current Unix timestamp in milliseconds as a 64-bit u
 ## Verification
 
 The receiver reverses the operation: read the timestamp from `X-Signature-Timestamp`, append it to the request body, hash with Keccak-256, and verify the signature against the sender's registered public key.
+
+The key presented in `X-Public-Key` is compared against the registered one byte for byte, so both must use the same uncompressed encoding. A compressed key does not decompress to a match — it is rejected as an unknown key, and every request signed with it fails.
 
 Reject a request whose timestamp is more than one minute from the current time — this bounds replay. Reject any request whose signature does not verify.
