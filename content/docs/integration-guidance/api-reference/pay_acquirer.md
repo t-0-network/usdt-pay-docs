@@ -85,7 +85,8 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| payment_ref | [string](../scalar/#string) |  | Sale identifier the Acquirer keeps in its own ledger; idempotency key, unique per Acquirer. |
+| payment_ref | [string](../scalar/#string) |  | Sale identifier from the Acquirer's own ledger, echoed on PaymentAuthorized and PaymentExpired. Not an idempotency key, and not required to be unique. |
+| idempotency_key | [string](../scalar/#string) |  | Retry identity for this call, unique per Acquirer. At most one payment intent is ever created under one key, and repeating a key whose intent exists returns it unchanged. Retrying a declined sale takes a fresh key under the same payment_ref. |
 | local_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount of the sale, in the settlement currency. |
 | usdt_settlement | [CreatePaymentIntentRequest.UsdtSettlementTerms](#tzero-v1-pay-CreatePaymentIntentRequest-UsdtSettlementTerms) |  |  |
 | fiat_settlement | [CreatePaymentIntentRequest.FiatSettlementTerms](#tzero-v1-pay-CreatePaymentIntentRequest-FiatSettlementTerms) |  |  |
@@ -332,7 +333,8 @@ This message has no fields defined.
 | settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears, resolved by t-0 from the LP's executions. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency of the bank-rails transfer. |
 | settlement_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount the LP transferred. |
-| initiated_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the LP initiated the bank-rails transfer. |
+| acquirer_id | [uint64](../scalar/#uint64) |  | Intended recipient. The Acquirer must reject a request whose id is not its own. |
+| initiated_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment t-0 accepted the LP's fiat-settlement report. |
 
 
 
@@ -445,8 +447,7 @@ This message has no fields defined.
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | REASON_UNSPECIFIED | 0 |  |
-| REASON_QUOTE_UNAVAILABLE | 10 | No standing quote available for this currency (LP not quoting it now, or not enabled for this Acquirer). |
-| REASON_AMOUNT_OUT_OF_RANGE | 30 | No standing quote's per-sale USDt bounds cover the request amount. |
+| REASON_QUOTE_UNAVAILABLE | 10 | No standing quote available for this currency right now. |
 
 
 
