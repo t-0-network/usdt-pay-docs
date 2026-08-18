@@ -114,17 +114,29 @@ message GetPaymentQuoteResponse {
 
     enum Reason {
       REASON_UNSPECIFIED = 0;
-      // No standing quote available for this currency (LP not quoting it now, or not enabled for this Acquirer).
+      // No standing quote available for this currency right now.
       REASON_QUOTE_UNAVAILABLE = 10;
-      // No standing quote's per-sale USDt bounds cover the request amount.
-      REASON_AMOUNT_OUT_OF_RANGE = 30;
     }
   }
 }
 
 message CreatePaymentIntentRequest {
-  /** Sale identifier the Acquirer keeps in its own ledger; idempotency key, unique per Acquirer. */
+  /**
+   * Sale identifier from the Acquirer's own ledger, echoed on PaymentAuthorized and
+   * PaymentExpired. Not an idempotency key, and not required to be unique.
+   */
   string payment_ref = 10 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
+
+  /**
+   * Retry identity for this call, unique per Acquirer. At most one payment intent
+   * is ever created under one key, and repeating a key whose intent exists returns
+   * it unchanged. Retrying a declined sale takes a fresh key under the same
+   * payment_ref.
+   */
+  string idempotency_key = 20 [(buf.validate.field).string = {
     min_len: 1
     max_len: 256
   }];
@@ -245,7 +257,10 @@ message SettlementReceivedRequest {
   uint64 lp_id = 10 [(buf.validate.field).uint64.gt = 0];
 
   /** Reference on the received transfer, matched against the bank statement. */
-  string bank_transfer_ref = 20 [(buf.validate.field).string = {min_len: 1}];
+  string bank_transfer_ref = 20 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
 
   /** ISO 4217 currency credited. */
   string local_currency = 30 [(buf.validate.field).string = {
@@ -323,10 +338,16 @@ message SettlementInitiatedRequest {
   uint64 lp_id = 20 [(buf.validate.field).uint64.gt = 0];
 
   /** Reference the LP put on the bank-rails transfer; matched against the statement. */
-  string bank_transfer_ref = 30 [(buf.validate.field).string = {min_len: 1}];
+  string bank_transfer_ref = 30 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
 
   /** Intents this settlement clears, resolved by t-0 from the LP's executions. */
-  repeated uint64 settled_payment_intent_ids = 40 [(buf.validate.field).repeated = {min_items: 1}];
+  repeated uint64 settled_payment_intent_ids = 40 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.items.uint64.gt = 0
+  ];
 
   /** ISO 4217 currency of the bank-rails transfer. */
   string local_currency = 50 [(buf.validate.field).string = {
@@ -343,7 +364,10 @@ message SettlementInitiatedRequest {
     }
   ];
 
-  /** Moment the LP initiated the bank-rails transfer. */
+  /** Intended recipient. The Acquirer must reject a request whose id is not its own. */
+  uint64 acquirer_id = 70 [(buf.validate.field).uint64.gt = 0];
+
+  /** Moment t-0 accepted the LP's fiat-settlement report. */
   google.protobuf.Timestamp initiated_at = 80 [(buf.validate.field).required = true];
 }
 
