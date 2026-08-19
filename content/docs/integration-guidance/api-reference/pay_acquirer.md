@@ -44,12 +44,9 @@ confirm fiat receipt.
 <a name="tzero-v1-pay-AcquirerPaymentExpiredRequest"></a>
 
 ### AcquirerPaymentExpiredRequest
-`PaymentExpired` is also a method on IssuerService in this flat
-package, so the request/response carry a role prefix to avoid a colliding
-`PaymentExpiredRequest`. Interim name: buf STANDARD RPC_REQUEST_STANDARD_NAME
-accepts only bare `PaymentExpiredRequest` or the full
-`AcquirerCallbackServicePaymentExpiredRequest`, so this short form needs a
-lint ignore at graduation (or rename the method).
+PaymentExpired exists on both the acquirer and issuer edges of this flat package,
+so each side's request and response carry their role as a prefix. This is the
+acquirer's.
 
 
 | Field | Type | Label | Description |
@@ -333,7 +330,7 @@ This message has no fields defined.
 | settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears, resolved by t-0 from the LP's executions. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency of the bank-rails transfer. |
 | settlement_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount the LP transferred. |
-| acquirer_id | [uint64](../scalar/#uint64) |  | Intended recipient. The Acquirer must reject a request whose id is not its own. |
+| acquirer_id | [uint64](../scalar/#uint64) |  | t-0's id for the Acquirer this settlement is addressed to. |
 | initiated_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment t-0 accepted the LP's fiat-settlement report. |
 
 

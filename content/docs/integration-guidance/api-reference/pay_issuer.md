@@ -110,12 +110,9 @@ and reservation expiry.
 <a name="tzero-v1-pay-IssuerPaymentExpiredRequest"></a>
 
 ### IssuerPaymentExpiredRequest
-`PaymentExpired` is also a method on AcquirerCallbackService in this flat
-package, so the request/response carry a role prefix to avoid a colliding
-`PaymentExpiredRequest`. Interim name: buf STANDARD RPC_REQUEST_STANDARD_NAME
-accepts only bare `PaymentExpiredRequest` or the full
-`IssuerServicePaymentExpiredRequest`, so this short form needs a lint
-ignore at graduation (or rename the method).
+PaymentExpired exists on both the acquirer and issuer edges of this flat package,
+so each side's request and response carry their role as a prefix. This is the
+issuer's.
 
 
 | Field | Type | Label | Description |
