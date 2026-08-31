@@ -99,8 +99,9 @@ variant in the MVP.
 ### Blockchain
 On-chain network a USDt leg moves over. Local to the pay contract, which is
 an independent service and shares no types with `tzero.v1.common`.
-Launch-live: TRON, ETH, BSC. Six more (Polygon, Arbitrum, Optimism, Base,
-Avalanche, Solana) are announced as upcoming and added here as they go live.
+Launch-live: ETH, BSC. TRON is committed for a later phase and already carries
+a value here; Arbitrum, Polygon, and Avalanche are announced as upcoming and
+added here as they go live.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -108,6 +109,21 @@ Avalanche, Solana) are announced as upcoming and added here as they go live.
 | BLOCKCHAIN_TRON | 10 |  |
 | BLOCKCHAIN_ETH | 20 |  |
 | BLOCKCHAIN_BSC | 30 |  |
+
+
+
+<a name="tzero-v1-pay-FundsDisposition"></a>
+
+### FundsDisposition
+Where a deposit's funds end up when the sale will not settle. Final when
+reported: whether a retained deposit is later released is decided out of band
+and is not part of this contract.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| FUNDS_DISPOSITION_UNSPECIFIED | 0 |  |
+| FUNDS_DISPOSITION_RETURNED_TO_SENDER | 10 | The Issuer returns the deposit to the customer's sender_address. |
+| FUNDS_DISPOSITION_RETAINED_BY_ISSUER | 20 | The Issuer keeps the deposit; the customer resolves it with the Issuer out of band. |
 
 
  <!-- end enums -->
