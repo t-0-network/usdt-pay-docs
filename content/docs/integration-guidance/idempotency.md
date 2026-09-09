@@ -56,6 +56,10 @@ A duplicate is a normal retry, not a fault. Returning an error for it breaks the
 
 A sender that gets no acknowledgment retries with the original key and identical content; the receiver dedupes. A **rejection** is itself an acknowledgment, so the sender stops retrying — but it never consumes the key: to fix the problem the sender resubmits the same key with corrected fields, which t-0 re-evaluates from scratch. **Idempotent replay** — returning the original result with no new side effect — applies only to an accepted call; a rejected or declined call commits nothing to replay.
 
+**Exception: `4 CreatePaymentIntent`.** A declined payment consumes the `idempotencyKey`. To retry a declined payment the Acquirer must use a fresh `idempotencyKey` under the same `paymentRef`.
+
+**`8 ExecuteQuote` — durable decision.** The LP's `Rejected` result is a durable business decision, not a transient error. t-0 does not retry a rejected execution; the authorized intent goes to manual handling.
+
 Inbound asynchronous endpoints (`6`, `9`, `10`, `12`) acknowledge with `accepted` or `rejected { rejectionCode, ... }`. A genuinely different real-world action — a new on-chain settlement transaction, a second bank transfer — is a new event under a new key, reconciled out of band; it is not a correction of the old key.
 
 ## Reliability
