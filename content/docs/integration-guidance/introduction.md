@@ -15,7 +15,7 @@ Your role determines which services you call and which callbacks you implement:
 - **Issuer** — call `IssuerService` (payment received, settlement sent, expiry); implement `IssuerCallbackService` (create payment instructions).
 - **Liquidity Provider** — call `LpService` (publish and withdraw quotes, fiat settlement sent); implement `LpCallbackService` (execute quote).
 
-The service and message definitions are in the [API Reference](api-reference/), generated from `acquirer.proto`, `issuer.proto`, `lp.proto`, and `types.proto`. Generate your client and server stubs from those definitions.
+The service and message definitions are in the [API Reference](api-reference/), generated from `acquirer/acquirer.proto`, `issuer/issuer.proto`, `lp/lp.proto`, and `common.proto` under `proto/tzero/v1/pay/`. Generate your client and server stubs from those definitions.
 
 ## API endpoints
 

@@ -8,17 +8,6 @@ OUT_DIR="integration-guidance/api-reference"
 TEMPLATE="$SCRIPT_DIR/gen-doc-template.tmpl"
 PROTO_DIR="$PROJECT_DIR/proto"
 
-# Convention: proto file path -> md slug
-# Strip "tzero/v1/" or "ivms101/v1/" prefix, replace "/" with "_", drop ".proto"
-proto_to_slug() {
-    local path="$1"
-    path="${path#tzero/v1/}"
-    path="${path#ivms101/v1/}"
-    path="${path//\//_}"
-    path="${path%.proto}"
-    echo "$path"
-}
-
 # Replicate protoc-gen-doc's anchor filter: "/" -> "_", other special chars -> "-"
 anchor_filter() {
     local str="$1"
@@ -30,26 +19,29 @@ escape_sed() {
     printf '%s' "$1" | sed 's/[&|\\]/\\&/g'
 }
 
-# Pages to generate: "proto_file|title|weight"
+# Pages to generate: "proto_file|title|weight|slug"
+# The fourth column is the output slug (md filename and Hugo URL segment).
+# validate.proto is proto2 extensions only — protoc resolves it via --proto_path
+# but it has nothing the template renders, so it is not listed here.
 PAGES=(
-    "tzero/v1/pay/acquirer.proto|Acquirer|331"
-    "tzero/v1/pay/issuer.proto|Issuer|332"
-    "tzero/v1/pay/lp.proto|Liquidity Provider|333"
-    "tzero/v1/pay/common.proto|Shared Types|337"
+    "tzero/v1/pay/acquirer/acquirer.proto|Acquirer|331|pay_acquirer"
+    "tzero/v1/pay/issuer/issuer.proto|Issuer|332|pay_issuer"
+    "tzero/v1/pay/lp/lp.proto|Liquidity Provider|333|pay_lp"
+    "tzero/v1/pay/common.proto|Shared Types|337|pay_common"
 )
 
 # Derive ALL_PROTOS from PAGES (single source of truth)
 ALL_PROTOS=()
 for page in "${PAGES[@]}"; do
-    IFS='|' read -r proto _ _ <<< "$page"
+    IFS='|' read -r proto _ _ _ <<< "$page"
     ALL_PROTOS+=("$proto")
 done
 
 # Build FILEREF sed script: maps anchor(file.Name) -> ../slug/
 FILEREF_SED_SCRIPT=$(mktemp)
-for proto in "${ALL_PROTOS[@]}"; do
+for page in "${PAGES[@]}"; do
+    IFS='|' read -r proto _ _ slug <<< "$page"
     file_anchor=$(anchor_filter "$proto")
-    slug=$(proto_to_slug "$proto")
     echo "s|%%FILEREF:${file_anchor}%%|../${slug}/|g" >> "$FILEREF_SED_SCRIPT"
 done
 # Also resolve scalar marker
@@ -59,8 +51,7 @@ gen_page() {
     local active_file="$1"
     local title="$2"
     local weight="$3"
-    local slug
-    slug=$(proto_to_slug "$active_file")
+    local slug="$4"
     local out_file="${slug}.md"
     local out_path="$PROJECT_DIR/content/docs/${OUT_DIR}/${out_file}"
 
@@ -95,8 +86,8 @@ gen_page() {
 
 # Generate all pages
 for page in "${PAGES[@]}"; do
-    IFS='|' read -r proto title weight <<< "$page"
-    gen_page "$proto" "$title" "$weight"
+    IFS='|' read -r proto title weight slug <<< "$page"
+    gen_page "$proto" "$title" "$weight" "$slug"
 done
 
 rm -f "$FILEREF_SED_SCRIPT"

@@ -9,28 +9,27 @@ draft: false
 toc: true
 ---
 
-<a name="tzero-v1-pay-LpCallbackService"></a>
+<a name="tzero-v1-pay-lp-LpCallbackService"></a>
 
 ## LpCallbackService
 LP-implemented endpoint t-0 calls to request the LP's durable decision on a
-standing quote execution for one authorized sale. Fiat mode only.
+standing quote execution for one authorized payment. Fiat mode only.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| ExecuteQuote | [ExecuteQuoteRequest](#tzero-v1-pay-ExecuteQuoteRequest) | [ExecuteQuoteResponse](#tzero-v1-pay-ExecuteQuoteResponse) | Requests a durable Accepted or Rejected result; only Accepted creates the LP's firm per-sale obligation. |
+| ExecuteQuote | [ExecuteQuoteRequest](#tzero-v1-pay-lp-ExecuteQuoteRequest) | [ExecuteQuoteResponse](#tzero-v1-pay-lp-ExecuteQuoteResponse) | Requests a durable Accepted or Rejected result; only Accepted creates the LP's firm per-payment obligation. |
 
 
-<a name="tzero-v1-pay-LpService"></a>
+<a name="tzero-v1-pay-lp-LpService"></a>
 
 ## LpService
-t-0 endpoints the LP calls to push and withdraw standing quotes and to report
-its self-initiated fiat settlements. Fiat mode only.
+t-0 endpoints the LP calls to push standing quotes and to report its
+self-initiated fiat settlements. Fiat mode only.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| PublishQuote | [PublishQuoteRequest](#tzero-v1-pay-PublishQuoteRequest) | [PublishQuoteResponse](#tzero-v1-pay-PublishQuoteResponse) | Pushes immutable standing quotes into t-0's Order Book, at most one per currency per call; each is multi-consumable while it stands. |
-| WithdrawQuote | [WithdrawQuoteRequest](#tzero-v1-pay-WithdrawQuoteRequest) | [WithdrawQuoteResponse](#tzero-v1-pay-WithdrawQuoteResponse) | Removes one standing quote before expiry; intents already accepted against it are unaffected. |
-| FiatSettlementSent | [FiatSettlementSentRequest](#tzero-v1-pay-FiatSettlementSentRequest) | [FiatSettlementSentResponse](#tzero-v1-pay-FiatSettlementSentResponse) | Reports a fiat bank-rails settlement the LP made on its own initiative against accepted quote executions. An execution still awaiting its durable result returns FAILED_PRECONDITION; retry the same request. |
+| PublishQuote | [PublishQuoteRequest](#tzero-v1-pay-lp-PublishQuoteRequest) | [PublishQuoteResponse](#tzero-v1-pay-lp-PublishQuoteResponse) | Pushes immutable standing quotes into t-0's Order Book, at most one per currency per call; each is multi-consumable while it stands. |
+| FiatSettlementSent | [FiatSettlementSentRequest](#tzero-v1-pay-lp-FiatSettlementSentRequest) | [FiatSettlementSentResponse](#tzero-v1-pay-lp-FiatSettlementSentResponse) | Reports a fiat bank-rails settlement the LP made on its own initiative against accepted quote executions. An execution still awaiting its durable result returns FAILED_PRECONDITION; retry the same request. |
 
  <!-- end services -->
 
@@ -38,7 +37,7 @@ its self-initiated fiat settlements. Fiat mode only.
 ##  Requests And Response Types
 
 
-<a name="tzero-v1-pay-ExecuteQuoteRequest"></a>
+<a name="tzero-v1-pay-lp-ExecuteQuoteRequest"></a>
 
 ### ExecuteQuoteRequest
 
@@ -48,11 +47,13 @@ its self-initiated fiat settlements. Fiat mode only.
 | ----- | ---- | ----- | ----------- |
 | execution_id | [uint64](../scalar/#uint64) |  | t-0's id for this execution command; idempotency key and, after Accepted, the LP's obligation handle. |
 | quote_id | [uint64](../scalar/#uint64) |  | t-0's id for the standing quote this execution is under. |
-| quote_ref | [string](../scalar/#string) |  | LP's own identifier for that quote — a non-authoritative correlation echo. Lets the LP attribute the execution even when it arrives before the LP has recorded t-0's quote_id (publish-vs-execute race). |
+| quote_ref | [string](../scalar/#string) |  | The LP's own quote_ref for that quote, echoed so the LP can attribute the execution even before it has recorded t-0's quote_id. |
 | acquirer_id | [uint64](../scalar/#uint64) |  | t-0's stable id for the Acquirer whose local-fiat obligation is being executed. |
-| local_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount owed to the Acquirer for this sale, in the standing quote's currency. |
-| amount_usdt | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | USDt the LP receives at settlement for this sale. |
+| local_amount | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Fiat amount owed to the Acquirer for this payment, in the standing quote's currency. |
+| amount_usdt | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | USDt the LP receives at settlement for this payment. |
 | executed_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment t-0 created this durable execution command at authorization. |
+| local_currency | [string](../scalar/#string) |  | Currency of local_amount — the standing quote's. |
+| fx_rate | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | The standing quote's rate, in units of local_currency per 1 USDt, locked for this payment. |
 
 
 
@@ -60,7 +61,7 @@ its self-initiated fiat settlements. Fiat mode only.
 
 
 
-<a name="tzero-v1-pay-ExecuteQuoteResponse"></a>
+<a name="tzero-v1-pay-lp-ExecuteQuoteResponse"></a>
 
 ### ExecuteQuoteResponse
 The LP's durable decision on one ExecuteQuote command.
@@ -68,8 +69,8 @@ The LP's durable decision on one ExecuteQuote command.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| accepted | [ExecuteQuoteResponse.Accepted](#tzero-v1-pay-ExecuteQuoteResponse-Accepted) |  | The LP accepts the execution. |
-| rejected | [ExecuteQuoteResponse.Rejected](#tzero-v1-pay-ExecuteQuoteResponse-Rejected) |  | The LP declines the execution. |
+| accepted | [ExecuteQuoteResponse.Accepted](#tzero-v1-pay-lp-ExecuteQuoteResponse-Accepted) |  | The LP accepts the execution. |
+| rejected | [ExecuteQuoteResponse.Rejected](#tzero-v1-pay-lp-ExecuteQuoteResponse-Rejected) |  | The LP declines the execution. |
 
 
 
@@ -77,10 +78,10 @@ The LP's durable decision on one ExecuteQuote command.
 
 
 
-<a name="tzero-v1-pay-ExecuteQuoteResponse-Accepted"></a>
+<a name="tzero-v1-pay-lp-ExecuteQuoteResponse-Accepted"></a>
 
 ### ExecuteQuoteResponse.Accepted
-Acceptance creates the LP's firm per-sale obligation.
+Acceptance creates the LP's firm per-payment obligation.
 
 
 This message has no fields defined.
@@ -90,7 +91,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-ExecuteQuoteResponse-Rejected"></a>
+<a name="tzero-v1-pay-lp-ExecuteQuoteResponse-Rejected"></a>
 
 ### ExecuteQuoteResponse.Rejected
 Rejection leaves the payment intent authorized for manual handling.
@@ -98,7 +99,7 @@ Rejection leaves the payment intent authorized for manual handling.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| reason | [ExecuteQuoteResponse.Rejected.Reason](#tzero-v1-pay-ExecuteQuoteResponse-Rejected-Reason) |  | Stable business classification for declining the command. |
+| reason | [ExecuteQuoteResponse.Rejected.Reason](#tzero-v1-pay-lp-ExecuteQuoteResponse-Rejected-Reason) |  | Stable business classification for declining the command. |
 | details | [string](../scalar/#string) |  | Human-readable business details for declining the command. |
 
 
@@ -107,7 +108,7 @@ Rejection leaves the payment intent authorized for manual handling.
 
 
 
-<a name="tzero-v1-pay-FiatSettlementSentRequest"></a>
+<a name="tzero-v1-pay-lp-FiatSettlementSentRequest"></a>
 
 ### FiatSettlementSentRequest
 
@@ -118,7 +119,7 @@ Rejection leaves the payment intent authorized for manual handling.
 | bank_transfer_ref | [string](../scalar/#string) |  | Reference on the bank-rails transfer; idempotency key, unique per LP. |
 | settled_execution_ids | [uint64](../scalar/#uint64) | repeated | Accepted executions this settlement clears, treated as a set (duplicates collapse, order is not significant). |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency delivered; matches the covered executions' currency. |
-| settlement_amount | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Local-fiat amount delivered; must equal the sum of the covered executions' local amounts. |
+| settlement_amount | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Local-fiat amount delivered; must equal the sum of the covered executions' local amounts. |
 | settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the LP released the bank-rails transfer. |
 
 
@@ -127,7 +128,7 @@ Rejection leaves the payment intent authorized for manual handling.
 
 
 
-<a name="tzero-v1-pay-FiatSettlementSentResponse"></a>
+<a name="tzero-v1-pay-lp-FiatSettlementSentResponse"></a>
 
 ### FiatSettlementSentResponse
 
@@ -135,8 +136,8 @@ Rejection leaves the payment intent authorized for manual handling.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| accepted | [FiatSettlementSentResponse.Accepted](#tzero-v1-pay-FiatSettlementSentResponse-Accepted) |  |  |
-| rejected | [FiatSettlementSentResponse.Rejected](#tzero-v1-pay-FiatSettlementSentResponse-Rejected) |  |  |
+| accepted | [FiatSettlementSentResponse.Accepted](#tzero-v1-pay-lp-FiatSettlementSentResponse-Accepted) |  |  |
+| rejected | [FiatSettlementSentResponse.Rejected](#tzero-v1-pay-lp-FiatSettlementSentResponse-Rejected) |  |  |
 
 
 
@@ -144,7 +145,7 @@ Rejection leaves the payment intent authorized for manual handling.
 
 
 
-<a name="tzero-v1-pay-FiatSettlementSentResponse-Accepted"></a>
+<a name="tzero-v1-pay-lp-FiatSettlementSentResponse-Accepted"></a>
 
 ### FiatSettlementSentResponse.Accepted
 
@@ -157,7 +158,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-FiatSettlementSentResponse-Rejected"></a>
+<a name="tzero-v1-pay-lp-FiatSettlementSentResponse-Rejected"></a>
 
 ### FiatSettlementSentResponse.Rejected
 
@@ -165,7 +166,7 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| reason | [FiatSettlementSentResponse.Rejected.Reason](#tzero-v1-pay-FiatSettlementSentResponse-Rejected-Reason) |  |  |
+| reason | [FiatSettlementSentResponse.Rejected.Reason](#tzero-v1-pay-lp-FiatSettlementSentResponse-Rejected-Reason) |  |  |
 
 
 
@@ -173,7 +174,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-PublishQuoteRequest"></a>
+<a name="tzero-v1-pay-lp-PublishQuoteRequest"></a>
 
 ### PublishQuoteRequest
 
@@ -181,7 +182,7 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| quotes | [PublishQuoteRequest.Quote](#tzero-v1-pay-PublishQuoteRequest-Quote) | repeated | Standing quotes to publish in one call, at most one per currency, each under its own quoteRef. The batch is atomic: one invalid quote declines the whole call and consumes no quoteRef. |
+| quotes | [PublishQuoteRequest.Quote](#tzero-v1-pay-lp-PublishQuoteRequest-Quote) | repeated | Standing quotes to publish in one call, at most one per currency, each under its own quote_ref. The batch is atomic: one invalid quote declines the whole call and consumes no quote_ref. |
 
 
 
@@ -189,7 +190,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-PublishQuoteRequest-Quote"></a>
+<a name="tzero-v1-pay-lp-PublishQuoteRequest-Quote"></a>
 
 ### PublishQuoteRequest.Quote
 
@@ -199,7 +200,7 @@ This message has no fields defined.
 | ----- | ---- | ----- | ----------- |
 | quote_ref | [string](../scalar/#string) |  | LP's identifier for this quote; idempotency key, unique per LP. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency the quote prices (e.g. COP). |
-| fx_rate | [Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Published rate, in units of local_currency per 1 USDt. |
+| fx_rate | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Published rate, in units of local_currency per 1 USDt. |
 | expires_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the quote stops standing, on t-0's clock. Validity bounds are a business decline (VALIDITY_INVALID), not request validation. |
 
 
@@ -208,7 +209,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-PublishQuoteResponse"></a>
+<a name="tzero-v1-pay-lp-PublishQuoteResponse"></a>
 
 ### PublishQuoteResponse
 
@@ -216,8 +217,8 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| success | [PublishQuoteResponse.Success](#tzero-v1-pay-PublishQuoteResponse-Success) |  |  |
-| failure | [PublishQuoteResponse.Failure](#tzero-v1-pay-PublishQuoteResponse-Failure) |  |  |
+| success | [PublishQuoteResponse.Success](#tzero-v1-pay-lp-PublishQuoteResponse-Success) |  |  |
+| failure | [PublishQuoteResponse.Failure](#tzero-v1-pay-lp-PublishQuoteResponse-Failure) |  |  |
 
 
 
@@ -225,7 +226,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-PublishQuoteResponse-Failure"></a>
+<a name="tzero-v1-pay-lp-PublishQuoteResponse-Failure"></a>
 
 ### PublishQuoteResponse.Failure
 
@@ -233,7 +234,7 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| reason | [PublishQuoteResponse.Failure.Reason](#tzero-v1-pay-PublishQuoteResponse-Failure-Reason) |  |  |
+| reason | [PublishQuoteResponse.Failure.Reason](#tzero-v1-pay-lp-PublishQuoteResponse-Failure-Reason) |  |  |
 
 
 
@@ -241,7 +242,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-PublishQuoteResponse-Success"></a>
+<a name="tzero-v1-pay-lp-PublishQuoteResponse-Success"></a>
 
 ### PublishQuoteResponse.Success
 
@@ -249,7 +250,7 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| quotes | [PublishQuoteResponse.Success.PublishedQuote](#tzero-v1-pay-PublishQuoteResponse-Success-PublishedQuote) | repeated | One entry per published quote, in request order. |
+| quotes | [PublishQuoteResponse.Success.PublishedQuote](#tzero-v1-pay-lp-PublishQuoteResponse-Success-PublishedQuote) | repeated | One entry per published quote, in request order. |
 
 
 
@@ -257,7 +258,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-PublishQuoteResponse-Success-PublishedQuote"></a>
+<a name="tzero-v1-pay-lp-PublishQuoteResponse-Success-PublishedQuote"></a>
 
 ### PublishQuoteResponse.Success.PublishedQuote
 
@@ -265,71 +266,9 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| quote_ref | [string](../scalar/#string) |  | Echo of the quote's quoteRef. |
+| quote_ref | [string](../scalar/#string) |  | Echo of the quote's quote_ref. |
 | quote_id | [uint64](../scalar/#uint64) |  | t-0's id for the standing quote, used everywhere downstream. |
 
-
-
-
-
-
-
-<a name="tzero-v1-pay-WithdrawQuoteRequest"></a>
-
-### WithdrawQuoteRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| quote_id | [uint64](../scalar/#uint64) |  | The standing quote to withdraw; must have been minted for this LP. |
-
-
-
-
-
-
-
-<a name="tzero-v1-pay-WithdrawQuoteResponse"></a>
-
-### WithdrawQuoteResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| success | [WithdrawQuoteResponse.Success](#tzero-v1-pay-WithdrawQuoteResponse-Success) |  |  |
-| failure | [WithdrawQuoteResponse.Failure](#tzero-v1-pay-WithdrawQuoteResponse-Failure) |  |  |
-
-
-
-
-
-
-
-<a name="tzero-v1-pay-WithdrawQuoteResponse-Failure"></a>
-
-### WithdrawQuoteResponse.Failure
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| reason | [WithdrawQuoteResponse.Failure.Reason](#tzero-v1-pay-WithdrawQuoteResponse-Failure-Reason) |  |  |
-
-
-
-
-
-
-
-<a name="tzero-v1-pay-WithdrawQuoteResponse-Success"></a>
-
-### WithdrawQuoteResponse.Success
-
-
-
-This message has no fields defined.
 
 
 
@@ -338,7 +277,7 @@ This message has no fields defined.
  <!-- end messages -->
 
 
-<a name="tzero-v1-pay-ExecuteQuoteResponse-Rejected-Reason"></a>
+<a name="tzero-v1-pay-lp-ExecuteQuoteResponse-Rejected-Reason"></a>
 
 ### ExecuteQuoteResponse.Rejected.Reason
 
@@ -350,7 +289,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-FiatSettlementSentResponse-Rejected-Reason"></a>
+<a name="tzero-v1-pay-lp-FiatSettlementSentResponse-Rejected-Reason"></a>
 
 ### FiatSettlementSentResponse.Rejected.Reason
 
@@ -367,7 +306,7 @@ This message has no fields defined.
 
 
 
-<a name="tzero-v1-pay-PublishQuoteResponse-Failure-Reason"></a>
+<a name="tzero-v1-pay-lp-PublishQuoteResponse-Failure-Reason"></a>
 
 ### PublishQuoteResponse.Failure.Reason
 
@@ -376,18 +315,6 @@ This message has no fields defined.
 | ---- | ------ | ----------- |
 | REASON_UNSPECIFIED | 0 |  |
 | REASON_VALIDITY_INVALID | 30 | A quote's expires_at is in the past, too short to be usable, or beyond the max window; the whole batch is declined. |
-
-
-
-<a name="tzero-v1-pay-WithdrawQuoteResponse-Failure-Reason"></a>
-
-### WithdrawQuoteResponse.Failure.Reason
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| REASON_UNSPECIFIED | 0 |  |
-| REASON_QUOTE_UNKNOWN | 10 | quote_id is unknown or belongs to another LP. |
 
 
  <!-- end enums -->
