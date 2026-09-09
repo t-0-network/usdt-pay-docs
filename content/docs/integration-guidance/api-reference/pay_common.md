@@ -18,16 +18,34 @@ toc: true
 
 ### Decimal
 Fixed-point monetary amount: unscaled * 10^exponent, so 123.45 is
-unscaled=12345, exponent=-2. Local to the pay contract — `pay` is an
-independent service and deliberately shares no types with `tzero.v1.common`,
-so a participant's generated code carries exactly one Decimal and one
-Blockchain.
+unscaled=12345, exponent=-2.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| unscaled | [int64](../scalar/#int64) |  |  |
+| unscaled | [int64](../scalar/#int64) |  | no validation: sign and magnitude are constrained per field by the predicate on the enclosing amount. |
 | exponent | [int32](../scalar/#int32) |  |  |
+
+
+
+
+
+
+
+<a name="tzero-v1-pay-DepositOption"></a>
+
+### DepositOption
+One selectable deposit option for an intent: the chain, the one-time address
+reserved on it, and the chain-native payment URI the POS carries to the customer
+(as a QR image, a wallet deep link, or any other carrier) without modification.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  | Chain this deposit option pays on. |
+| deposit_address | [string](../scalar/#string) |  | One-time deposit address reserved for this intent on `chain`. |
+| payment_uri | [string](../scalar/#string) |  | Chain-native payment URI (EIP-681 on EVM chains); produced only by the Issuer and carried to the customer unchanged. |
+| token_contract | [string](../scalar/#string) |  | USDt token contract on `chain` the deposit must be made in. |
 
 
 
@@ -38,8 +56,8 @@ Blockchain.
 <a name="tzero-v1-pay-OnChainSettlementDetails"></a>
 
 ### OnChainSettlementDetails
-USDt-on-chain settlement payload, shared by the issuer's SettlementSent and
-the acquirer's SettlementCompleted usdt variant.
+One on-chain USDt settlement transfer, as reported by the Issuer on
+SettlementSent and relayed to the Acquirer on SettlementCompleted.
 
 
 | Field | Type | Label | Description |
@@ -47,25 +65,6 @@ the acquirer's SettlementCompleted usdt variant.
 | on_chain_tx_hash | [string](../scalar/#string) |  | Hash of the settlement transaction. |
 | chain | [Blockchain](#tzero-v1-pay-Blockchain) |  | Chain the settlement moved over. |
 | destination_address | [string](../scalar/#string) |  | Registered settlement wallet on `chain` — the Acquirer's (USDt mode) or the LP's (fiat mode). |
-
-
-
-
-
-
-
-<a name="tzero-v1-pay-QrOption"></a>
-
-### QrOption
-One selectable QR payment option for an intent — the renderable payload is
-chain-native and encoded by the POS without modification.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  | Chain this deposit option pays on. |
-| deposit_address | [string](../scalar/#string) |  | One-time deposit address reserved for this intent on `chain`. |
-| renderable_payload | [string](../scalar/#string) |  | Chain-native URI (e.g. ERC-681 on EVM) the POS encodes as a QR image as-is. |
 
 
 
@@ -97,10 +96,9 @@ variant in the MVP.
 <a name="tzero-v1-pay-Blockchain"></a>
 
 ### Blockchain
-On-chain network a USDt leg moves over. Local to the pay contract, which is
-an independent service and shares no types with `tzero.v1.common`.
-Launch-live: TRON, ETH, BSC. Six more (Polygon, Arbitrum, Optimism, Base,
-Avalanche, Solana) are announced as upcoming and added here as they go live.
+On-chain network a USDt transfer moves over. Live at launch: ETH and BSC.
+TRON already carries a value but is not accepted until it goes live in a
+later phase; Arbitrum, Polygon and Avalanche are added as they go live.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -108,6 +106,21 @@ Avalanche, Solana) are announced as upcoming and added here as they go live.
 | BLOCKCHAIN_TRON | 10 |  |
 | BLOCKCHAIN_ETH | 20 |  |
 | BLOCKCHAIN_BSC | 30 |  |
+
+
+
+<a name="tzero-v1-pay-FundsDisposition"></a>
+
+### FundsDisposition
+Where a deposit's funds end up when the payment will not settle. Final when
+reported: whether a retained deposit is later released is decided out of band
+and is not part of this contract.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| FUNDS_DISPOSITION_UNSPECIFIED | 0 |  |
+| FUNDS_DISPOSITION_RETURNED_TO_SENDER | 10 | The Issuer returns the deposit to the customer's sender_address. |
+| FUNDS_DISPOSITION_RETAINED_BY_ISSUER | 20 | The Issuer keeps the deposit; the customer resolves it with the Issuer out of band. |
 
 
  <!-- end enums -->

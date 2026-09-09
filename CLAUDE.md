@@ -10,7 +10,8 @@ Hugo-based documentation site for t-0 network. API reference docs are auto-gener
 - `_gen/gen-doc-template.tmpl` is the Go template used by `protoc-gen-doc`
 - Requires `protoc` (latest) and `protoc-gen-doc` (pinned in `go.mod` via `tool` directive)
 - **Important**: `protoc-gen-doc` pre-built release binaries are incompatible with protoc v28+. Always build from source with `go install`
-- The `PAGES` array in `gen.sh` is the single source of truth for which proto files to document. `ALL_PROTOS` is derived from it.
+- The `PAGES` array in `gen.sh` is the single source of truth for which proto files to document. `ALL_PROTOS` is derived from it. Each entry is `proto_file|title|weight|slug`; the fourth column is the output slug (md filename and Hugo URL segment). The FILEREF sed map derives from `slug`, not from the proto path.
+- The backend `files-sync` action adds and modifies files but never deletes. When the backend moves a proto, delete the old path by hand or `protoc` compiles both and the template emits duplicates.
 - CI workflow (`.github/workflows/generate.yaml`) auto-generates docs on PRs that touch `proto/` or `content/docs/`
 
 ### Cross-file type links
