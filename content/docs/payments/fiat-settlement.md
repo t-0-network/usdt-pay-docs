@@ -66,7 +66,7 @@ sequenceDiagram
     ACQ->>T0: 3 GetPaymentQuote (localCurrency, localAmount)
     T0-->>ACQ: quoteId, settlementAmount, fxRate, expiresAt
     ACQ->>T0: 4 CreatePaymentIntent (paymentRef, idempotencyKey, quoteId, local)
-    T0->>ISS: 5 CreatePaymentInstructions (settlementAmount, expiresAt)
+    T0->>ISS: 5 CreatePaymentInstructions (amountUsdt, expiresAt)
     ISS-->>T0: depositOptions, expiresAt
     T0-->>ACQ: paymentIntentId, depositOptions, expiresAt
     POS->>C: display the QR (paymentUri unchanged)
@@ -100,7 +100,7 @@ The LP publishes standing FX quotes into t-0's book on its own initiative, each 
 
 **`4 CreatePaymentIntent`.** The Acquirer opens the payment intent, passing its own `paymentRef`, an `idempotencyKey` (the retry identity for this call, unique per Acquirer), and its `amount`, denominated in fiat (`local`: a `LocalAmount` with currency and value) or in USDt (`settlement`). The `quoteId` is optional: if omitted, t-0 resolves the freshest standing quote for the payment's currency. The worked example uses `local` denomination. t-0 reads the currency and rate from the quote and derives the USDT the customer will pay as `settlementAmount = round(localAmount / fxRate)`, to two decimal places, half-up. When the Acquirer supplies a USDt `settlement` figure, the quote's rate still fixes the conversion and the response's `fiat` block carries the derived `quoteId`, `fxRate`, and `local` amount. Accepting the intent locks that rate for this intent; a later change to the quote does not affect it. t-0 declines the intent if the quote no longer stands, or if the quote's remaining validity is too short to guarantee the rate can be locked with the LP at authorization. For the worked example, `settlementAmount = round(80,000 / 4,000) = 20.00 USDT`.
 
-**`5 CreatePaymentInstructions`.** Inline, t-0 asks the Issuer to prepare the payment, passing the `settlementAmount` and an absolute expiry (a 60 to 120 second window on t-0's clock). The Issuer reserves a one-time deposit address per supported chain, builds the chain-native payment URI for each, and returns the `depositOptions` (one per chain, each with the deposit address, the `paymentUri`, and the USDt `tokenContract`) together with the expiry. A one-time address per intent means every incoming transfer maps to exactly one sale. t-0 returns the `paymentIntentId`, the `depositOptions`, and the expiry to the Acquirer; the POS renders the Issuer's `paymentUri` without modification.
+**`5 CreatePaymentInstructions`.** Inline, t-0 asks the Issuer to prepare the payment, passing the `amountUsdt` and an absolute expiry (a 60 to 120 second window on t-0's clock). The Issuer reserves a one-time deposit address per supported chain, builds the chain-native payment URI for each, and returns the `depositOptions` (one per chain, each with the deposit address, the `paymentUri`, and the USDt `tokenContract`) together with the expiry. A one-time address per intent means every incoming transfer maps to exactly one sale. t-0 returns the `paymentIntentId`, the `depositOptions`, and the expiry to the Acquirer; the POS renders the Issuer's `paymentUri` without modification.
 
 ### The customer pays (`6`, `7`, `8`)
 
