@@ -13,8 +13,9 @@ toc: true
 
 ## AcquirerCallbackService
 Acquirer-implemented callbacks t-0 pushes: authorization, settlement
-progress, expiry, and payment failure. Each is delivered at least once; the
-Acquirer dedupes on the t-0-minted id it carries.
+progress, expiry, and payment failure. Each is delivered to the Acquirer's
+registered callback URL at least once; the Acquirer dedupes on the t-0-minted
+id it carries.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
@@ -395,7 +396,7 @@ This message has no fields defined.
 | settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears. |
 | settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment t-0 verified the settlement final on-chain. |
 | settlement | [tzero.v1.pay.OnChainSettlementDetails](../pay_common/#tzero-v1-pay-OnChainSettlementDetails) |  | The on-chain USDt transfer that reached the Acquirer's registered wallet. |
-| acquirer_id | [uint64](../scalar/#uint64) |  | t-0's id for the Acquirer this settlement is addressed to; the receiver must reject the callback unless it equals its own participant id. |
+| acquirer_id | [uint64](../scalar/#uint64) |  | t-0's id for the Acquirer this settlement is addressed to. |
 
 
 
@@ -429,7 +430,7 @@ This message has no fields defined.
 | bank_transfer_ref | [string](../scalar/#string) |  | Reference the LP put on the bank-rails transfer; matched against the statement. |
 | settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears; the Acquirer maps them to its own payment_refs. |
 | local | [LocalAmount](#tzero-v1-pay-acquirer-LocalAmount) |  | Fiat amount and currency of the bank-rails transfer the LP reported; SettlementReceived must confirm exactly this figure. |
-| acquirer_id | [uint64](../scalar/#uint64) |  | t-0's id for the Acquirer this settlement is addressed to; the receiver must reject the callback unless it equals its own id. |
+| acquirer_id | [uint64](../scalar/#uint64) |  | t-0's id for the Acquirer this settlement is addressed to. |
 | initiated_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment t-0 accepted the LP's fiat-settlement report. |
 | settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the LP reported completing the bank-rails transfer — the value date to match on the statement. |
 
