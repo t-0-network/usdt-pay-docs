@@ -257,10 +257,11 @@ This message has no fields defined.
 <a name="tzero-v1-pay-issuer-SettlementSentResponse-Rejected"></a>
 
 ### SettlementSentResponse.Rejected
-The settlement is not recorded. ON_CHAIN_UNCONFIRMED clears on its own and
-the report is resubmitted under the same settlement_ref once the transaction
-confirms; the other reasons open a manual reconciliation with t-0, and the
-corrected report follows from it.
+The report is not accepted. For a first-time ref the settlement is not recorded;
+for a CONFLICT on an already-accepted ref the original settlement stands.
+ON_CHAIN_UNCONFIRMED clears on its own and the report is resubmitted under the
+same settlement_ref once the transaction confirms; the other reasons open a manual
+reconciliation with t-0, and the corrected report follows from it.
 
 
 | Field | Type | Label | Description |
@@ -316,7 +317,7 @@ corrected report follows from it.
 | REASON_AMOUNT_MISMATCH | 20 | The confirmed amount does not equal amount_usdt or the covered intents' sum. |
 | REASON_WRONG_DESTINATION | 30 | destination_address (or its chain) is not the expected registered (chain, address) pair for the mode. |
 | REASON_INTENT_NOT_SETTLEABLE | 40 | A listed intent is unknown, not authorized, or already covered. Fiat mode also accepts a settled intent, whose Acquirer confirmation may land before this reimbursement. |
-| REASON_SETTLEMENT_REF_CONFLICT | 50 | This on-chain transfer is already recorded under a different settlement_ref. |
+| REASON_SETTLEMENT_REF_CONFLICT | 50 | Either this on-chain transfer is already recorded under a different settlement_ref, or this settlement_ref is already recorded with different identity fields. The stored settlement stands; a genuinely different transfer needs a different ref. |
 
 
  <!-- end enums -->
