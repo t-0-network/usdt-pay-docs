@@ -37,7 +37,7 @@ For client stubs and starter code, see the [USDT Pay SDK](https://github.com/t-0
 
 ## Flow from your side
 
-Solid arrows are API calls and their responses. Dotted open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
+Solid arrows are API calls. Dashed arrows are responses. Dashed open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
 
 ### USDt mode
 
@@ -53,9 +53,9 @@ sequenceDiagram
     T0->>ACQ: §7 PaymentAuthorized (settlementAmount, onChainTxHash)
     ACQ-->>T0: ack
     Note over ACQ: release the goods
-    BC-)ACQ: USDT lands in your wallet
+    BC--)ACQ: USDT lands in your wallet
     Note over T0,BC: t-0 verifies that transfer on-chain
-    T0->>ACQ: §13 SettlementCompleted (settlementId, settledPaymentIntentIds[])
+    T0->>ACQ: §13 SettlementCompleted (settledPaymentIntentIds[])
     ACQ-->>T0: ack
 ```
 
@@ -77,10 +77,10 @@ sequenceDiagram
     T0->>ACQ: §7 PaymentAuthorized (fiatSettlement, settlementAmount)
     ACQ-->>T0: ack
     Note over ACQ: release the goods
-    T0->>ACQ: §11 SettlementInitiated (settledPaymentIntentIds[], local, bankTransferRef)
+    T0->>ACQ: §11 SettlementInitiated (bankTransferRef)
     Note over ACQ,BANK: §11 and the bank credit can arrive in either order
-    BANK-)ACQ: fiat credit (bankTransferRef, may cover several intents)
-    ACQ->>T0: §12 SettlementReceived (lpId, bankTransferRef, localCurrency, amountReceived)
+    BANK--)ACQ: fiat credit (bankTransferRef)
+    ACQ->>T0: §12 SettlementReceived (lpId, bankTransferRef)
     T0-->>ACQ: Accepted
 ```
 

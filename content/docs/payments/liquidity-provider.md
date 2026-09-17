@@ -28,7 +28,7 @@ A sale is authorized after `§7` and settled after `§12` (fiat mode) or `§13` 
 
 ## Flow from your side
 
-Solid arrows are API calls and their responses. Dotted open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
+Solid arrows are API calls. Dashed arrows are responses. Dashed open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
 
 ### Standing quotes
 
@@ -54,11 +54,11 @@ sequenceDiagram
     participant BC as Chain
     participant BANK as Bank
 
-    T0->>LP: §8 ExecuteQuote (executionId, quoteId, localAmount)
+    T0->>LP: §8 ExecuteQuote (executionId, acquirerId, localAmount)
     LP-->>T0: Accepted (obligation at locked fxRate)
-    Note over LP,BC: the two legs below run in either order
-    BC-)LP: Issuer's USDT lands in your wallet
-    LP-)BANK: pay localAmount to the Acquirer's account
+    Note over LP,BANK: the two legs below run in either order
+    BC--)LP: Issuer's USDT lands in your wallet
+    LP--)BANK: pay localAmount to the Acquirer's account
     LP->>T0: §10 FiatSettlementSent (bankTransferRef, settledExecutionIds[])
     T0-->>LP: Accepted
 ```

@@ -26,7 +26,7 @@ You are the only role that touches the chain in both directions. You reserve one
 
 ## Flow from your side
 
-Solid arrows are API calls and their responses. Dotted open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
+Solid arrows are API calls. Dashed arrows are responses. Dashed open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
 
 ### Reserve, observe, report, settle
 
@@ -36,12 +36,12 @@ sequenceDiagram
     participant T0 as t-0
     participant BC as Chain
     T0->>ISS: §5 CreatePaymentInstructions (paymentIntentId, amountUsdt, expiresAt)
-    ISS-->>T0: depositOptions[], expiresAt
-    BC-)ISS: USDT deposit observed by your watcher
+    ISS-->>T0: depositOptions, expiresAt
+    BC--)ISS: USDT deposit observed by your watcher
     Note over ISS: screening runs. Report only when complete
-    ISS->>T0: §6 PaymentReceived (authorized, creditedAmount, onChainTxHash, senderAddress)
-    T0-->>ISS: Accepted. You now owe the settlement
-    ISS-)BC: broadcast USDT transfer to counterparty wallet
+    ISS->>T0: §6 PaymentReceived (authorized, creditedAmount)
+    T0-->>ISS: Accepted
+    ISS--)BC: broadcast USDT to counterparty wallet
     ISS->>T0: §9 SettlementSent (settlementRef, onChainTxHash, intentIds)
     T0-->>ISS: Accepted
     Note over T0,BC: t-0 verifies the transfer on-chain
