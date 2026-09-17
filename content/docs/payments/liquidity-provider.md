@@ -40,11 +40,10 @@ sequenceDiagram
     loop on your own schedule
         LP->>T0: §1 PublishQuote (quotes[])
         T0-->>LP: quoteIds[]
-        Note over LP: at most one quote per currency per call
-        Note over LP,T0: the batch is atomic
-        Note over LP,T0: a currency you stop quoting is unavailable at §3
     end
 ```
+
+Each call carries at most one quote per currency. The batch is atomic: all quotes succeed or all fail. A currency you stop quoting becomes unavailable to your Acquirers at `§3`.
 
 ### One authorized sale
 
@@ -56,14 +55,12 @@ sequenceDiagram
     participant BANK as Bank
 
     T0->>LP: §8 ExecuteQuote (executionId, quoteId, localAmount)
-    LP-->>T0: Accepted
-    Note over LP: firm obligation at fxRate
+    LP-->>T0: Accepted (obligation at locked fxRate)
     Note over LP,BC: the two legs below run in either order
     BC-)LP: Issuer's USDT lands in your wallet
     LP-)BANK: pay localAmount to the Acquirer's account
     LP->>T0: §10 FiatSettlementSent (bankTransferRef, settledExecutionIds[])
     T0-->>LP: Accepted
-    Note over T0: t-0 takes it from here. It sends you nothing further
 ```
 
 One Issuer transfer may cover executions for several Acquirers. One bank transfer credits one Acquirer and may batch several executions for that Acquirer. A `Rejected` answer on `§8` ends your part in that sale.

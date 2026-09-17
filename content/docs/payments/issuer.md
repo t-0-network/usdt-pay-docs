@@ -36,8 +36,7 @@ sequenceDiagram
     participant T0 as t-0
     participant BC as Chain
     T0->>ISS: §5 CreatePaymentInstructions (paymentIntentId, amountUsdt, expiresAt)
-    Note over ISS: same paymentIntentId → return the same reservation
-    ISS-->>T0: depositOptions[], expiresAt at or after requested
+    ISS-->>T0: depositOptions[], expiresAt
     BC-)ISS: USDT deposit observed by your watcher
     Note over ISS: screening runs. Report only when complete
     ISS->>T0: §6 PaymentReceived (authorized, creditedAmount, onChainTxHash, senderAddress)
@@ -45,7 +44,7 @@ sequenceDiagram
     ISS-)BC: broadcast USDT transfer to counterparty wallet
     ISS->>T0: §9 SettlementSent (settlementRef, onChainTxHash, intentIds)
     T0-->>ISS: Accepted
-    Note over T0,BC: t-0 verifies the transfer on-chain and stores the verdict
+    Note over T0,BC: t-0 verifies the transfer on-chain
 ```
 
 **Counterparty wallet.** In USDt mode you send USDT to the Acquirer's wallet. In fiat mode you send USDT to the LP's wallet. Both come from your own `acquirerId`-to-wallet mapping, configured at onboarding. t-0 sends no wallet on `§5`, so its destination check on `§9` is a genuine cross-check against your mapping.

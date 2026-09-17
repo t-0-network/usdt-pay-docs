@@ -71,10 +71,12 @@ sequenceDiagram
     ACQ->>T0: §3 GetPaymentQuote (localCurrency, localAmount)
     T0-->>ACQ: quoteId, fxRate, settlementAmount, expiresAt
     ACQ->>T0: §4 CreatePaymentIntent (idempotencyKey, amount.local, quoteId)
-    T0-->>ACQ: paymentIntentId, depositOptions[], fiat{quoteId, fxRate, local}
+    T0-->>ACQ: paymentIntentId, depositOptions[], expiresAt, fiat{quoteId, fxRate, local}
+    Note over ACQ: render each paymentUri as the QR, unchanged
     Note over T0: customer pays USDT on-chain, outside your view
     T0->>ACQ: §7 PaymentAuthorized (fiatSettlement, settlementAmount)
     ACQ-->>T0: ack
+    Note over ACQ: release the goods
     T0->>ACQ: §11 SettlementInitiated (settledPaymentIntentIds[], local, bankTransferRef)
     Note over ACQ,BANK: §11 and the bank credit can arrive in either order
     BANK-)ACQ: fiat credit (bankTransferRef, may cover several intents)
