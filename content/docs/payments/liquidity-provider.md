@@ -24,7 +24,7 @@ A sale is authorized after `§7` and settled after `§12` (fiat mode) or `§13` 
 |---|---|---|---|---|
 | You call | `§1 PublishQuote` | fiat | `quoteRef` (per quote in the batch) | [PublishQuoteRequest](/docs/integration-guidance/api-reference/pay_lp/#tzero-v1-pay-lp-PublishQuoteRequest) |
 | You call | `§10 FiatSettlementSent` | fiat | `bankTransferRef` | [FiatSettlementSentRequest](/docs/integration-guidance/api-reference/pay_lp/#tzero-v1-pay-lp-FiatSettlementSentRequest) |
-| You host | `§8 ExecuteQuote` | fiat | `executionId` (dedup key) | [ExecuteQuoteRequest](/docs/integration-guidance/api-reference/pay_lp/#tzero-v1-pay-lp-ExecuteQuoteRequest) |
+| You host | `§8 ExecuteQuote` | fiat | `executionId` | [ExecuteQuoteRequest](/docs/integration-guidance/api-reference/pay_lp/#tzero-v1-pay-lp-ExecuteQuoteRequest) |
 
 ## Flow from your side
 
@@ -37,7 +37,7 @@ sequenceDiagram
     participant LP as You (LP)
     participant T0 as t-0
 
-    loop before each quote expires
+    loop on your own schedule
         LP->>T0: §1 PublishQuote (quotes[])
         T0-->>LP: quoteIds[]
         Note over LP: at most one quote per currency per call
@@ -78,41 +78,23 @@ One Issuer transfer may cover executions for several Acquirers. One bank transfe
 
 ## What t-0 checks on your calls
 
+The [API reference](/docs/integration-guidance/api-reference/pay_lp/) lists the current reason codes for each endpoint. This section describes the behavior and your recovery path.
+
 ### §1 PublishQuote
 
-t-0 validates the whole batch before it looks up any `quoteRef`.
+t-0 validates the whole batch before it looks up any `quoteRef`. It rejects the call if the batch contains a duplicate `quoteRef` or duplicate currency, if any `fxRate` is outside t-0's accepted magnitude, or if any quote's validity window is too short or too long. The whole batch fails; no ref is consumed.
 
-| Reason | Condition | What to do |
-|---|---|---|
-| `InvalidArgument` | Duplicate `quoteRef` or duplicate currency in one call, or `fxRate` outside t-0's accepted magnitude | Fix the request and resend |
-| `VALIDITY_INVALID` | Any quote's `expiresAt` is too near or too far from now (whole batch declined, no ref consumed) | Adjust the validity window and resend |
-
-Because validation runs first, an unchanged retry can fail `VALIDITY_INVALID` once its remaining validity has dropped below t-0's minimum, even though the quote still stands. A valid resubmission of a known `quoteRef` returns its original `quoteId` and changes nothing in the book. Refreshed terms need a fresh `quoteRef`.
+Because validation runs first, an unchanged retry can fail on validity once the remaining window has dropped below t-0's minimum, even though the quote still stands. A valid resubmission of a known `quoteRef` returns its original `quoteId` and changes nothing in the book. Refreshed terms need a fresh `quoteRef`.
 
 ### §8 ExecuteQuote
 
-t-0 records what you answer.
-
-| Your answer | What t-0 does |
-|---|---|
-| `Accepted` | Records the obligation at the locked rate |
-| `Rejected` | Records `details` (the `reason` enum is dropped). The intent stays authorized for manual handling. No retry |
-| Lost reply | t-0 redelivers under the same `executionId` until you answer |
-| Repeat after a stored result | No-op |
+t-0 records what you answer. `Accepted` records the obligation at the locked rate. `Rejected` records your details (the intent stays authorized for manual handling; t-0 does not retry). A lost reply is redelivered under the same `executionId` until you answer. A repeat after a stored result is a no-op.
 
 ### §10 FiatSettlementSent
 
-t-0 checks in this order. A rejection does not consume the `bankTransferRef`.
+t-0 validates in order. A rejection does not consume the `bankTransferRef`.
 
-| Reason | Condition | What to do |
-|---|---|---|
-| `EXECUTION_UNKNOWN` | An execution id is unknown, belongs to another LP, or was rejected | Remove it from the set and resubmit |
-| `FAILED_PRECONDITION` | A listed execution has no durable result yet | Retry the same request |
-| `ACQUIRER_MIXED` | The execution set spans more than one Acquirer | Split into one report per Acquirer |
-| `CURRENCY_MISMATCH` | Your currency differs from the locked currency of an execution | Fix the currency and resubmit |
-| `AMOUNT_MISMATCH` | Your amount does not equal the sum of the executions' locked local amounts | Fix the amount and resubmit |
-| `EXECUTION_ALREADY_COVERED` | An execution is covered by an accepted settlement | Remove it from the set |
-| `BANK_TRANSFER_REF_CONFLICT` | Same `bankTransferRef` accepted with a different currency, amount, or execution set | Use a fresh `bankTransferRef` for the new transfer |
+t-0 rejects if any execution id is unknown, belongs to another LP, or was rejected (remove it and resubmit). It rejects if a listed execution has no durable result yet (retry the same request). It rejects if the execution set spans more than one Acquirer (split into one report per Acquirer). It rejects if the currency or amount does not match the locked values (fix and resubmit). At insert time, it rejects if an execution is covered by another accepted settlement (remove it) or if the same `bankTransferRef` was accepted with different content (use a fresh ref for the new transfer).
 
 ## What you must guarantee (t-0 does not check it)
 
@@ -126,7 +108,7 @@ t-0 checks in this order. A rejection does not consume the `bankTransferRef`.
 - Refresh quotes before they lapse, or your Acquirers' fiat sales stop at `§3`. A quote must outlive the intent's QR window to be usable at `§4`, so refresh with that margin. Your Acquirers will pass `§3` and fail `§4` near each quote's end if the headroom is too short.
 - An older quote stays referenceable by `quoteId` until its own expiry after you publish a newer one. Keep the terms of every quote you published.
 - A `§8` can reach you after the quote it references has expired. It binds you at that quote's rate.
-- Treat `FAILED_PRECONDITION` on `§10` as "retry the same request."
+- If t-0 rejects `§10` because an execution has no durable result yet, retry the same request.
 
 ## Reconcile against t-0
 
@@ -141,6 +123,6 @@ Watch your wallet for the Issuer's USDT and match each transfer against the exec
 5. Watch your wallet for the Issuer's USDT.
 6. Pay one Acquirer per bank transfer with a unique `bankTransferRef`.
 7. Send `§10` with the execution set and the exact sum.
-8. Retry on `FAILED_PRECONDITION`.
+8. If `§10` fails because an execution has no durable result, retry the same request.
 9. Resubmit the same `bankTransferRef` on a rejection with corrected fields.
 10. Write durably before acknowledging any callback.

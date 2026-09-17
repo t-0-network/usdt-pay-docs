@@ -22,7 +22,7 @@ For client stubs and starter code, see the [USDT Pay SDK](https://github.com/t-0
 
 ## What you host and what you call
 
-| Direction | Endpoint | Mode | Idempotency / dedup key | API reference |
+| Direction | Endpoint | Mode | Idempotency key | API reference |
 |---|---|---|---|---|
 | You call | `§3 GetPaymentQuote` | fiat | — | [GetPaymentQuoteRequest](/docs/integration-guidance/api-reference/pay_acquirer/#tzero-v1-pay-acquirer-GetPaymentQuoteRequest) |
 | You call | `§4 CreatePaymentIntent` | both | `idempotencyKey` | [CreatePaymentIntentRequest](/docs/integration-guidance/api-reference/pay_acquirer/#tzero-v1-pay-acquirer-CreatePaymentIntentRequest) |
@@ -33,7 +33,7 @@ For client stubs and starter code, see the [USDT Pay SDK](https://github.com/t-0
 | You host | `§15 PaymentExpired` | both | `paymentIntentId` | [PaymentExpiredRequest](/docs/integration-guidance/api-reference/pay_acquirer/#tzero-v1-pay-acquirer-PaymentExpiredRequest) |
 | You host | `§16 PaymentFailed` | both | `paymentIntentId` | [PaymentFailedRequest](/docs/integration-guidance/api-reference/pay_acquirer/#tzero-v1-pay-acquirer-PaymentFailedRequest) |
 
-`§7`, `§15`, and `§16` share `paymentIntentId` as their dedup key. Dedup on the callback type, not on the key alone.
+`§7`, `§15`, and `§16` share `paymentIntentId` as their idempotency key. Dedup on the callback type, not on the key alone.
 
 ## Flow from your side
 
@@ -96,49 +96,25 @@ In fiat mode there is no `§13`. Your `§12` is the terminal event. `§11` names
 
 ## What t-0 checks on your calls
 
+The [API reference](/docs/integration-guidance/api-reference/pay_acquirer/) lists the current reason codes for each endpoint. This section describes the behavior and your recovery path.
+
 ### `§3 GetPaymentQuote`
 
-| Code | Condition | What to do |
-|---|---|---|
-| `QUOTE_UNAVAILABLE` | No LP assigned to you, or no standing quote in that currency | Wait for the LP to publish a quote in that currency |
-| `InvalidArgument` | The amount has more decimals than the currency allows, is too large, or rounds to zero | Fix the amount and retry |
+t-0 declines the quote request if no LP is assigned to you, if the LP has no standing quote in that currency, or if the amount violates the currency's decimal rules. Wait for the LP to publish a quote, or fix the amount and retry.
 
 ### `§4 CreatePaymentIntent`
 
-**Transport errors:**
+t-0 rejects the call outright if your onboarding configuration does not match the request (fiat fields on a USDt-mode Acquirer, or no Issuer or LP configured). Fix your request or check your configuration.
 
-| Code | Condition | What to do |
-|---|---|---|
-| `FailedPrecondition` | You sent `local` or `quoteId` but your settlement mode is USDt, or t-0 has no Issuer (or, in fiat mode, no LP) configured for you | Check your onboarding configuration |
-| `InvalidArgument` | `local.currency` differs from the referenced quote's currency, the amount has more decimals than the currency allows, or the amount is too large or rounds to zero | Fix the request fields |
+Business declines fall into two groups:
 
-**Business declines (quote-side):** t-0 stored nothing. Call `§3` for a fresh quote and resend `§4`. The same key or a fresh one both work.
+**Quote-side declines** (the quote expired, no quote covers this currency, or the quote does not outlive the QR window): t-0 stored nothing. Call `§3` for a fresh quote and resend `§4`. The same key or a fresh one both work.
 
-| Code | Condition |
-|---|---|
-| `QUOTE_EXPIRED` | The referenced quote is gone, or belongs to another LP |
-| `QUOTE_UNAVAILABLE` | No standing quote covers this currency |
-| `QUOTE_INSUFFICIENT_HEADROOM` | The quote expires before the intent's QR window would end |
-
-**Business declines (Issuer-leg):**
-
-| Code | Condition | What to do |
-|---|---|---|
-| `AMOUNT_OUT_OF_RANGE` | The Issuer will not handle this amount | Fix the amount and resend under a fresh key |
-| `ISSUER_UNAVAILABLE` | The Issuer call failed or returned a persisted decline | Send the same key once more. If the same decline comes back, open a fresh key under the same `paymentRef` |
-| `ADDRESS_POOL_EMPTY` | The Issuer has no addresses left | Same as `ISSUER_UNAVAILABLE` |
-
-`ISSUER_UNAVAILABLE` is ambiguous: t-0 returns it both for a transport failure and for a decline the Issuer stored. One same-key retry distinguishes them: if it replays the decline, the outcome is stored and a fresh key is your next step.
+**Issuer-leg declines** (the Issuer will not handle this amount, has no addresses, or did not respond): the same key may re-drive the Issuer call if t-0 did not store an outcome, or replay the stored decline if it did. Send the same key once more. If the same decline comes back, the outcome is stored and you open a fresh key under the same `paymentRef`. For an amount the Issuer rejected, fix the amount and use a fresh key.
 
 ### `§12 SettlementReceived`
 
-| Code | Condition | What to do |
-|---|---|---|
-| `UNKNOWN_TRANSFER` | No `§11` exists for that `(lpId, bankTransferRef)` addressed to you | Wait for `§11` or verify the reference |
-| `CURRENCY_MISMATCH` | The currency you sent differs from `§11` | Resubmit with the correct currency |
-| `AMOUNT_MISMATCH` | The amount you sent differs from `§11`'s `local` figure | Resubmit with the exact `§11` figure |
-
-A rejection never consumes the `(lpId, bankTransferRef)` pair. Resubmit with corrected fields. A repeat of an accepted `§12` is accepted regardless of content.
+t-0 rejects `§12` if no `§11` exists for that `(lpId, bankTransferRef)` addressed to you, or if the currency or amount you sent differs from the `§11` figure. A rejection never consumes the pair. Resubmit with corrected fields. A repeat of an accepted `§12` is accepted regardless of content.
 
 ## What you must guarantee (t-0 does not check it)
 
@@ -165,7 +141,7 @@ In USDt mode, watch your wallet for USDT credits and match each transaction agai
 3. Render `paymentUri` unchanged in the QR.
 4. Host the five callbacks (`§7`, `§11`, `§13`, `§15`, `§16`) over the signed transport.
 5. Write durably, then acknowledge.
-6. Dedup each callback by `(callback type, dedup key)`.
+6. Dedup each callback by `(callback type, idempotency key)`.
 7. On `§7`, release goods. On `§15` or `§16`, cancel the sale.
 8. Fiat: call `§3` before `§4`, match bank credits on `(lpId, bankTransferRef)`, send `§12` with the exact `§11` figure.
 9. USDt: reconcile wallet credits against `§13`.

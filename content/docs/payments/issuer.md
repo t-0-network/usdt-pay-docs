@@ -52,68 +52,45 @@ sequenceDiagram
 
 ## When the sale does not complete
 
-**Screening fails.** You send `§6 PaymentReceived` with `unprocessable` and a `disposition`. t-0 responds `Accepted`. With `RETURNED_TO_SENDER` you broadcast a refund to `senderAddress`. With `RETAINED_BY_ISSUER` no transfer follows.
+**Screening fails.** You send `§6 PaymentReceived` with an `unprocessable` outcome and a `disposition`. t-0 responds `Accepted`. If the disposition is to return the funds, you broadcast a refund to `senderAddress`. If the disposition is to retain them, no transfer follows.
 
-**Deposit reported after the QR window.** t-0 judges expiry by the moment it starts processing your `§6`. A deposit that landed in time but that you reported after `expiresAt` gets `Rejected INTENT_EXPIRED`, the same as a late deposit. Refund it to `senderAddress`.
+**Deposit reported after the QR window.** t-0 judges expiry by the moment it starts processing your `§6`. A deposit that landed in time but that you reported after `expiresAt` is rejected as expired, the same as a late deposit. Refund it to `senderAddress`.
 
-**Duplicate transaction hash.** A `§6` rejected with `TRANSFER_RECORDED_FOR_ANOTHER_INTENT` calls for no refund and no disposition action. Reconcile this case out of band.
+**Duplicate transaction hash.** If t-0 rejects `§6` because that on-chain transaction is recorded under a different intent, do not refund. Reconcile this case out of band.
 
 **No deposit arrives.** Release the address on your own clock at `expiresAt`. No expiry callback exists for the Issuer.
 
-**You decline `§5`.** Your `ADDRESS_POOL_EMPTY`, `AMOUNT_OUT_OF_RANGE`, or `ISSUER_UNAVAILABLE` response ends the intent before the customer sees a QR.
+**You decline `§5`.** Your decline response (no addresses available, amount out of range, or a general failure) ends the intent before the customer sees a QR.
 
 ## What t-0 checks on your calls
 
+The [API reference](/docs/integration-guidance/api-reference/pay_issuer/) lists the current reason codes for each endpoint. This section describes the behavior and your recovery path.
+
 ### §5 CreatePaymentInstructions (your response)
 
-| Check | Detail |
-|---|---|
-| protovalidate on `depositOptions` | At least one option. `chain` set. Addresses 34 to 42 characters. `paymentUri` non-empty. `tokenContract` present. |
-| `expiresAt` | Must be at or after the requested value. If earlier, t-0 discards the response and declines the payment. |
-| Deadline | t-0 gives up on the call after a short deadline and declines the payment. |
-| Not checked | t-0 does not verify the token contract against a known USDT address, one option per chain, or the URI format. |
+t-0 validates your response before accepting it. You must return at least one deposit option with `chain` set, addresses between 34 and 42 characters, a non-empty `paymentUri`, and a `tokenContract`. Your `expiresAt` must be at or after the value t-0 requested; if it is earlier, t-0 discards the response and declines the payment. t-0 gives up on the call after a short deadline and declines the payment if you do not answer in time.
+
+t-0 does not verify the token contract against a known USDT address, does not enforce one option per chain, and does not check the URI format.
 
 ### §6 PaymentReceived
 
-| Reason / error | Condition | What to do |
-|---|---|---|
-| `UNKNOWN_INTENT` | The `paymentIntentId` is not yours. | Check the id and retry against the correct one. |
-| `INTENT_EXPIRED` | t-0 started processing after `expiresAt` on its clock. Also returned for declined intents. | Refund the deposit to `senderAddress`. |
-| `FailedPrecondition` | The intent is still being created. | Retry after a short wait. |
-| `TRANSFER_RECORDED_FOR_ANOTHER_INTENT` | The same `(chain, onChainTxHash)` is recorded under a different intent. | Do not refund. Reconcile out of band. |
-| `AMOUNT_MISMATCH` | Authorized outcome only: the credited amount you report does not equal the intent's `settlementAmount`. `12.5` equals `12.50`. | Report the amount that was credited, not the amount you expected. |
-| Replay of `authorized` | An authorized replay accepts only `authorized` again. | No action needed. |
-| Replay of `unprocessable` | An unprocessable replay accepts only the same disposition. | No action needed. |
+t-0 rejects `§6` if the intent is not yours, if t-0 started processing after `expiresAt` on its clock (also returned for declined intents), if the intent is still being created (retry after a short wait), or if the same on-chain transaction hash is recorded under a different intent (do not refund that case; reconcile out of band).
+
+For an `authorized` outcome, the credited amount you report must equal the intent's `settlementAmount` (`12.5` equals `12.50`). Report the amount that was credited, not the amount you expected. Replays must match: an authorized replay accepts only `authorized` again, and an unprocessable replay accepts only the same disposition.
 
 Rejections do not consume the key. `§6` carries the amount, chain, transaction hash, and sender address. It carries no deposit address and no token contract. t-0 does not match the chain to an offered option or look the deposit up on-chain.
 
 ### §9 SettlementSent
 
-t-0 checks `§9` in three groups.
+t-0 checks `§9` in three stages.
 
-**Replay of an accepted `settlementRef`:**
+**Replay.** If you resubmit a `settlementRef` that t-0 accepted before, identical content is accepted again. Different content is rejected; do not reuse that ref, send a corrected report under a fresh one.
 
-| Reason | Condition | What to do |
-|---|---|---|
-| `Accepted` | Content matches the original report. | No action needed. |
-| `SETTLEMENT_REF_CONFLICT` | Content differs from the original report. | Do not reuse this `settlementRef`. Send the corrected report under a fresh ref. |
+**Validation of a new report.** t-0 checks in order: every intent id must be known, yours, and in an authorized or settled state; the destination must be one counterparty, one mode, and the counterparty's registered wallet; the sum of the intents' `settlementAmount` must equal your reported total. Fix your intent set, verify your `acquirerId`-to-wallet mapping, or report the exact aggregate.
 
-**Validation of a new report (checked in order):**
+**Insert-time conflicts.** t-0 rejects if the same on-chain transaction hash sits under another ref (use a fresh `settlementRef`) or if an intent is covered by a settlement another ref accepted (remove the covered intent).
 
-| Reason | Condition | What to do |
-|---|---|---|
-| `INTENT_NOT_SETTLEABLE` | An intent id is unknown, not yours, or not in an authorized or settled state. | Check the intent set. |
-| `WRONG_DESTINATION` | Mixed counterparties, mixed modes, or `(chain, destinationAddress)` does not match the counterparty's registered wallet. | Verify your `acquirerId`-to-wallet mapping. |
-| `AMOUNT_MISMATCH` | Sum of the intents' `settlementAmount` does not equal `amountUsdt`. | Report the exact aggregate. |
-
-**Conflicts found at insert:**
-
-| Reason | Condition | What to do |
-|---|---|---|
-| `SETTLEMENT_REF_CONFLICT` | The same `(chain, onChainTxHash)` sits under another ref. | Use a fresh `settlementRef` for the new transfer. |
-| `INTENT_NOT_SETTLEABLE` | An intent is covered by a settlement another ref accepted. | Remove the covered intent from your set. |
-
-One `§9` may cover many intents. In fiat mode it may cover several Acquirers that share the LP wallet. It must not mix USDt-mode and fiat-mode intents, and it must not mix two LPs. Each intent belongs to one accepted settlement and each transaction to one ref. The proto defines `ON_CHAIN_UNCONFIRMED` but t-0 does not return it.
+One `§9` may cover many intents. In fiat mode it may cover several Acquirers that share the LP wallet. It must not mix USDt-mode and fiat-mode intents, and it must not mix two LPs. Each intent belongs to one accepted settlement and each transaction to one ref.
 
 ## What you must guarantee (t-0 does not check it)
 
