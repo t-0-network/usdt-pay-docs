@@ -37,8 +37,6 @@ For client stubs and starter code, see the [USDT Pay SDK](https://github.com/t-0
 
 ## Flow from your side
 
-Solid arrows are API calls. Dashed arrows are responses. Dashed open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
-
 ### USDt mode
 
 ```mermaid
