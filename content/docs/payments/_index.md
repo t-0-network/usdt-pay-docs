@@ -13,3 +13,6 @@ The QR is only the transport for a chain-native payment URI. The product is USDT
 
 - [How It Works](how-it-works/) — roles, payment flow, intent states, protocol rules, and links to the generated API reference.
 - [Fiat Settlement](fiat-settlement/) — the LP path for Acquirers settled in local fiat over bank rails.
+- [Acquirer](acquirer/): what you host, what you call, and what t-0 checks, from the Acquirer's side.
+- [Issuer](issuer/): deposit addresses, payment reports, and settlement transfers from the Issuer's side.
+- [Liquidity Provider](liquidity-provider/): standing quotes, quote execution, and fiat settlement from the LP's side.

@@ -11,9 +11,9 @@ You integrate with USDT Pay by implementing the protocol over the t-0 network. C
 
 Your role determines which services you call and which callbacks you implement:
 
-- **Acquirer** — call `AcquirerService` (get a quote, create a payment intent, confirm fiat receipt); implement `AcquirerCallbackService` (authorization, settlement, expiry and failure events).
-- **Issuer** — call `IssuerService` (payment received, settlement sent); implement `IssuerCallbackService` (create payment instructions).
-- **Liquidity Provider** — call `LpService` (publish quotes, fiat settlement sent); implement `LpCallbackService` (execute quote).
+- **Acquirer** — call `AcquirerService` (get a quote, create a payment intent, confirm fiat receipt); implement `AcquirerCallbackService` (authorization, settlement, expiry and failure events). See the [Acquirer integration page](/docs/payments/acquirer/) for the full flow from your side.
+- **Issuer** — call `IssuerService` (payment received, settlement sent); implement `IssuerCallbackService` (create payment instructions). See the [Issuer integration page](/docs/payments/issuer/) for the full flow from your side.
+- **Liquidity Provider** — call `LpService` (publish quotes, fiat settlement sent); implement `LpCallbackService` (execute quote). See the [LP integration page](/docs/payments/liquidity-provider/) for the full flow from your side.
 
 The service and message definitions are in the [API Reference](api-reference/), generated from `acquirer/acquirer.proto`, `issuer/issuer.proto`, `lp/lp.proto`, and `common.proto` under `proto/tzero/v1/pay/`. Generate your client and server stubs from those definitions.
 
