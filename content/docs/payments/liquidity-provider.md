@@ -28,7 +28,7 @@ A sale is authorized after `§7` and settled after `§12` (fiat mode) or `§13` 
 
 ## Flow from your side
 
-`->>` a call, `-->>` its response, `-)` an on-chain or bank transfer, `Note` something outside your systems or done locally.
+Solid arrows are API calls and their responses. Dotted open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
 
 ### Standing quotes
 

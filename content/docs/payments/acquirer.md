@@ -37,7 +37,7 @@ For client stubs and starter code, see the [USDT Pay SDK](https://github.com/t-0
 
 ## Flow from your side
 
-`->>` a call, `-->>` its response, `-)` an on-chain or bank transfer, `Note` something outside your systems or done locally.
+Solid arrows are API calls and their responses. Dotted open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
 
 ### USDt mode
 

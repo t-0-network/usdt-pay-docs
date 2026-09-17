@@ -26,7 +26,7 @@ You are the only role that touches the chain in both directions. You reserve one
 
 ## Flow from your side
 
-`->>` a call, `-->>` its response, `-)` an on-chain or bank transfer, `Note` something outside your systems or done locally.
+Solid arrows are API calls and their responses. Dotted open arrows are on-chain or bank transfers. Yellow notes mark things that happen outside your systems or that you do locally.
 
 ### Reserve, observe, report, settle
 
