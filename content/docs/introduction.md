@@ -18,4 +18,4 @@ Four roles take part:
 
 Each Acquirer has one settlement mode, fixed at onboarding. In **USDT settlement**, the Issuer settles USDT on-chain to the Acquirer's wallet. In **fiat settlement**, the Issuer settles USDT to the LP, and the LP settles local fiat to the Acquirer.
 
-Start with [USDT Payments](/docs/payments/) for the payment flow. Use [Integration Guidance](/docs/integration-guidance/) for authentication, idempotency, and the generated API reference.
+Start with [USDT Payments](/docs/payments/) for the payment flow. Each role has its own integration page: [Acquirer](/docs/payments/acquirer/), [Issuer](/docs/payments/issuer/), [Liquidity Provider](/docs/payments/liquidity-provider/). Use [Integration Guidance](/docs/integration-guidance/) for authentication, idempotency, and the generated API reference.

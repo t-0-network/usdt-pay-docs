@@ -22,6 +22,8 @@ The settlement mode — USDt on-chain or fiat — is fixed per Acquirer at onboa
 
 ## End-to-end flow
 
+The diagrams below show the protocol from all participants at once. If you integrate a single role, start with the per-role page instead: [Acquirer](/docs/payments/acquirer/), [Issuer](/docs/payments/issuer/), [Liquidity Provider](/docs/payments/liquidity-provider/).
+
 The customer payment and authorization mechanics are the same in both settlement modes. The diagrams duplicate those steps so each mode can be read on its own.
 
 ### USDt settlement
