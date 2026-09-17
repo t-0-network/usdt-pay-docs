@@ -7,7 +7,7 @@ draft: false
 toc: true
 ---
 
-You create payment intents, render the QR, and receive settlement. You exchange no direct calls with the Issuer or the LP. In USDt mode, USDT lands in your wallet on-chain. In fiat mode, local currency lands in your bank account through the LP. You do not observe the customer's deposit: the Issuer watches the chain and reports to t-0, and t-0 tells you the outcome.
+You create payment intents and render the QR for the customer. You receive settlement once the payment clears. You exchange no direct calls with the Issuer or the LP. In USDt mode, USDT lands in your wallet on-chain. In fiat mode, local currency lands in your bank account through the LP. You do not observe the customer's deposit: the Issuer watches the chain and reports to t-0, and t-0 tells you the outcome.
 
 A sale is authorized after `§7` and settled after `§12` (fiat mode) or `§13` (USDt mode).
 
@@ -88,9 +88,9 @@ In fiat mode there is no `§13`. Your `§12` is the terminal event. `§11` names
 
 **The QR window passes with no valid payment.** t-0 sends `§15 PaymentExpired` with `expiredAt` set to the intent's `expiresAt`. Cancel the sale and drop the QR.
 
-**The Issuer will not process the deposit.** t-0 sends `§16 PaymentFailed` with the amount the Issuer reported and a `disposition` you relay to the customer. `§16` can arrive only while the window is open. After expiry, `§15` is the last word.
+**The Issuer will not process the deposit.** t-0 sends `§16 PaymentFailed` with the amount the Issuer reported and a `disposition` you relay to the customer. t-0 sends `§16` only for a deposit it processed before `expiresAt`. After expiry, `§15` is the last word.
 
-**`§4` is declined.** A declined `§4` never opens an intent. Nothing follows, and no callback arrives.
+**t-0 declines `§4`.** A declined `§4` never opens an intent. Nothing follows, and no callback arrives.
 
 **`§16` delivery timing.** `§16` can arrive after `expiresAt` because delivery lags t-0's decision. Accept it if the intent is still open on your side.
 
@@ -152,6 +152,7 @@ A rejection never consumes the `(lpId, bankTransferRef)` pair. Resubmit with cor
 - In fiat mode, match bank credits on `(lpId, bankTransferRef)` and confirm the exact `§11` figure in your `§12`.
 - `§13` follows t-0's on-chain verification, not the Issuer's report. USDT can sit in your wallet before `§13` arrives.
 - `§4` blocks while t-0 asks the Issuer. Size that call's timeout for a round trip through t-0.
+- `acquirerId` on `§11`/`§13` is yours to check if you want. The contract no longer requires refusal.
 
 ## Reconcile against t-0
 

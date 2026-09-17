@@ -35,7 +35,7 @@ sequenceDiagram
     participant ISS as You (Issuer)
     participant T0 as t-0
     participant BC as Chain
-    T0->>ISS: §5 CreatePaymentInstructions (paymentIntentId, acquirerId, amountUsdt, expiresAt)
+    T0->>ISS: §5 CreatePaymentInstructions (paymentIntentId, amountUsdt, expiresAt)
     Note over ISS: same paymentIntentId → return the same reservation
     ISS-->>T0: depositOptions[], expiresAt at or after requested
     BC-)ISS: USDT deposit observed by your watcher
@@ -43,7 +43,7 @@ sequenceDiagram
     ISS->>T0: §6 PaymentReceived (authorized, creditedAmount, onChainTxHash, senderAddress)
     T0-->>ISS: Accepted. You now owe the settlement
     ISS-)BC: broadcast USDT transfer to counterparty wallet
-    ISS->>T0: §9 SettlementSent (settlementRef, amountUsdt, onChainTxHash, destinationAddress, intentIds)
+    ISS->>T0: §9 SettlementSent (settlementRef, onChainTxHash, intentIds)
     T0-->>ISS: Accepted
     Note over T0,BC: t-0 verifies the transfer on-chain and stores the verdict
 ```
@@ -85,7 +85,7 @@ sequenceDiagram
 | Replay of `authorized` | An authorized replay accepts only `authorized` again. | No action needed. |
 | Replay of `unprocessable` | An unprocessable replay accepts only the same disposition. | No action needed. |
 
-Rejections do not consume the key. `§6` carries the amount, chain, transaction hash, and sender address. It carries no deposit address and no token contract. t-0 does not match the chain to an offered option or look the deposit up on-chain. Report the amount that was credited, not the amount you expected.
+Rejections do not consume the key. `§6` carries the amount, chain, transaction hash, and sender address. It carries no deposit address and no token contract. t-0 does not match the chain to an offered option or look the deposit up on-chain.
 
 ### §9 SettlementSent
 
@@ -113,7 +113,7 @@ t-0 checks `§9` in three groups.
 | `SETTLEMENT_REF_CONFLICT` | The same `(chain, onChainTxHash)` sits under another ref. | Use a fresh `settlementRef` for the new transfer. |
 | `INTENT_NOT_SETTLEABLE` | An intent is covered by a settlement another ref accepted. | Remove the covered intent from your set. |
 
-One `§9` may cover many intents. In fiat mode it may cover several Acquirers that share the LP wallet. It must not mix USDt-mode and fiat-mode intents, and must not mix two LPs. Each intent belongs to one accepted settlement and each transaction to one ref. `ON_CHAIN_UNCONFIRMED` is defined in the proto but t-0 does not return it.
+One `§9` may cover many intents. In fiat mode it may cover several Acquirers that share the LP wallet. It must not mix USDt-mode and fiat-mode intents, and it must not mix two LPs. Each intent belongs to one accepted settlement and each transaction to one ref. The proto defines `ON_CHAIN_UNCONFIRMED` but t-0 does not return it.
 
 ## What you must guarantee (t-0 does not check it)
 
@@ -121,7 +121,7 @@ One `§9` may cover many intents. In fiat mode it may cover several Acquirers th
 - Use one-time addresses. Each deposit address maps to one intent.
 - Honour the absolute `expiresAt` that t-0 sends. The QR window started before t-0 called you, so the time you see is shorter than a full window.
 - Resolve the settlement wallet from `acquirerId` using your own onboarding mapping. t-0 sends no wallet on `§5`, so its `§9` check is a genuine cross-check.
-- Verify the deposit yourself: token contract, deposit address, and chain. `§6` carries no address or token, and t-0 checks none of those fields.
+- Verify the deposit yourself: check the token contract and deposit address against your reservation. `§6` carries no address or token, and t-0 checks none of those fields.
 - Report only after screening is complete. Report before `expiresAt` or t-0 treats the deposit as late.
 - From `Accepted` on `§6` you own the on-chain risk. Reorgs are yours.
 - Write durably before acknowledging any callback. t-0 redelivers until it gets a success response, with no cap, and can redeliver once more after a success it failed to record.
@@ -139,7 +139,7 @@ You can watch the chain for your own settlement transfers and compare them again
 2. Return one reservation per `paymentIntentId`, same answer on a repeat.
 3. Use one-time addresses per chain, each with `paymentUri` and `tokenContract`.
 4. Hold your own `acquirerId`-to-wallet mapping.
-5. Watch the chain for deposits and verify token, amount, and chain yourself.
+5. Watch the chain for deposits. Verify the token contract and amount yourself.
 6. Screen, then send `§6` with the credited amount.
 7. On `Accepted` treat the settlement as owed.
 8. Broadcast one transfer per `settlementRef` to the counterparty wallet.
