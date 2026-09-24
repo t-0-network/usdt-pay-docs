@@ -160,7 +160,30 @@ The customer's USDt-via-QR payment instructions.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| deposit_options | [tzero.v1.pay.DepositOption](../pay_common/#tzero-v1-pay-DepositOption) | repeated | One deposit option per chain the Issuer supports for this intent; the customer picks one in their wallet. |
+| deposit_options | [CreatePaymentIntentResponse.Success.UsdtOnChainInstructions.DepositOption](#tzero-v1-pay-acquirer-CreatePaymentIntentResponse-Success-UsdtOnChainInstructions-DepositOption) | repeated | One deposit option per chain the Issuer supports for this intent; the customer picks one in their wallet. |
+
+
+
+
+
+
+
+<a name="tzero-v1-pay-acquirer-CreatePaymentIntentResponse-Success-UsdtOnChainInstructions-DepositOption"></a>
+
+### CreatePaymentIntentResponse.Success.UsdtOnChainInstructions.DepositOption
+One selectable deposit option: the chain, the one-time address reserved
+on it, and the USDt token contract with its decimals. Together with
+settlement_amount these are everything the POS needs to build whatever
+it carries to the customer (a QR image, a wallet deep link, or a plain
+address).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chain | [tzero.v1.pay.Blockchain](../pay_common/#tzero-v1-pay-Blockchain) |  | Chain this deposit option pays on. |
+| deposit_address | [string](../scalar/#string) |  | One-time deposit address reserved for this intent on `chain`. |
+| token_contract | [string](../scalar/#string) |  | USDt token contract on `chain` the deposit must be made in. |
+| token_decimals | [uint32](../scalar/#uint32) |  | Decimals of `token_contract`: the amount to transfer in the token's base units is settlement_amount * 10^token_decimals. USDt does not use the same decimals on every chain. |
 
 
 
@@ -361,6 +384,7 @@ the last word on that payment.
 | amount_usdt | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | USDt the deposit credited, as reported by the Issuer; may differ from the intent's settlement_amount. |
 | usdt_on_chain | [tzero.v1.pay.UsdtOnChainPayment](../pay_common/#tzero-v1-pay-UsdtOnChainPayment) |  |  |
 | disposition | [tzero.v1.pay.FundsDisposition](../pay_common/#tzero-v1-pay-FundsDisposition) |  | Where the funds go, so the merchant can tell the customer what to expect. |
+| reason | [tzero.v1.pay.PaymentFailureReason](../pay_common/#tzero-v1-pay-PaymentFailureReason) |  | Why the Issuer will not process the deposit, so the merchant can tell the customer. |
 | failed_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the intent became terminally failed. |
 | fiat_settlement | [FiatSettlement](#tzero-v1-pay-acquirer-FiatSettlement) |  | no validation: absent for an Acquirer settled on-chain, so no presence rule applies. |
 
