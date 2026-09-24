@@ -32,27 +32,6 @@ unscaled=12345, exponent=-2.
 
 
 
-<a name="tzero-v1-pay-DepositOption"></a>
-
-### DepositOption
-One selectable deposit option for an intent: the chain, the one-time address
-reserved on it, and the chain-native payment URI the POS carries to the customer
-(as a QR image, a wallet deep link, or any other carrier) without modification.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| chain | [Blockchain](#tzero-v1-pay-Blockchain) |  | Chain this deposit option pays on. |
-| deposit_address | [string](../scalar/#string) |  | One-time deposit address reserved for this intent on `chain`. |
-| payment_uri | [string](../scalar/#string) |  | Chain-native payment URI (EIP-681 on EVM chains); produced only by the Issuer and carried to the customer unchanged. |
-| token_contract | [string](../scalar/#string) |  | USDt token contract on `chain` the deposit must be made in. |
-
-
-
-
-
-
-
 <a name="tzero-v1-pay-OnChainSettlementDetails"></a>
 
 ### OnChainSettlementDetails
@@ -121,6 +100,20 @@ and is not part of this contract.
 | FUNDS_DISPOSITION_UNSPECIFIED | 0 |  |
 | FUNDS_DISPOSITION_RETURNED_TO_SENDER | 10 | The Issuer returns the deposit to the customer's sender_address. |
 | FUNDS_DISPOSITION_RETAINED_BY_ISSUER | 20 | The Issuer keeps the deposit; the customer resolves it with the Issuer out of band. |
+
+
+
+<a name="tzero-v1-pay-PaymentFailureReason"></a>
+
+### PaymentFailureReason
+Why the Issuer will not process a deposit, reported by the Issuer and relayed
+to the Acquirer so the merchant can tell the customer what went wrong.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PAYMENT_FAILURE_REASON_UNSPECIFIED | 0 |  |
+| PAYMENT_FAILURE_REASON_AMOUNT_MISMATCH | 10 | The deposit's amount differs from the intent's settlement_amount. |
+| PAYMENT_FAILURE_REASON_ISSUER_DECLINED | 20 | The Issuer declined the deposit for any other reason, screening included; no detail is disclosed. |
 
 
  <!-- end enums -->

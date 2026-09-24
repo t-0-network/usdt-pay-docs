@@ -13,11 +13,11 @@ toc: true
 
 ## IssuerCallbackService
 Issuer-implemented endpoint t-0 calls to reserve deposit addresses and obtain
-the deposit options (chain-native payment URIs) for an intent.
+the deposit options for an intent.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| CreatePaymentInstructions | [CreatePaymentInstructionsRequest](#tzero-v1-pay-issuer-CreatePaymentInstructionsRequest) | [CreatePaymentInstructionsResponse](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse) | Reserves one deposit address per supported chain and returns the deposit options with their payment URIs. |
+| CreatePaymentInstructions | [CreatePaymentInstructionsRequest](#tzero-v1-pay-issuer-CreatePaymentInstructionsRequest) | [CreatePaymentInstructionsResponse](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse) | Reserves one deposit address per supported chain and returns the deposit options. |
 
 
 <a name="tzero-v1-pay-issuer-IssuerService"></a>
@@ -97,8 +97,26 @@ and the USDt settlements that clear the intents it covers.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| deposit_options | [tzero.v1.pay.DepositOption](../pay_common/#tzero-v1-pay-DepositOption) | repeated | One deposit option per chain the Issuer supports for this intent. |
+| deposit_options | [CreatePaymentInstructionsResponse.Success.DepositOption](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse-Success-DepositOption) | repeated | One deposit option per chain the Issuer supports for this intent. |
 | expires_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Absolute expiry of the reservation; must be at or after the requested expires_at, else t-0 discards the instructions and declines the payment. |
+
+
+
+
+
+
+
+<a name="tzero-v1-pay-issuer-CreatePaymentInstructionsResponse-Success-DepositOption"></a>
+
+### CreatePaymentInstructionsResponse.Success.DepositOption
+One selectable deposit option: the chain, the one-time address reserved on it, and the USDt token contract.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chain | [tzero.v1.pay.Blockchain](../pay_common/#tzero-v1-pay-Blockchain) |  | Chain this deposit option pays on. |
+| deposit_address | [string](../scalar/#string) |  | One-time deposit address reserved for this intent on `chain`. |
+| token_contract | [string](../scalar/#string) |  | USDt token contract on `chain` the deposit must be made in. |
 
 
 
@@ -151,6 +169,7 @@ disposition says where the funds go and is final when reported.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | disposition | [tzero.v1.pay.FundsDisposition](../pay_common/#tzero-v1-pay-FundsDisposition) |  | Where the funds go; final when reported. |
+| reason | [tzero.v1.pay.PaymentFailureReason](../pay_common/#tzero-v1-pay-PaymentFailureReason) |  | Why the deposit will not be processed; relayed to the Acquirer. |
 
 
 
@@ -257,10 +276,11 @@ This message has no fields defined.
 <a name="tzero-v1-pay-issuer-SettlementSentResponse-Rejected"></a>
 
 ### SettlementSentResponse.Rejected
-The settlement is not recorded. ON_CHAIN_UNCONFIRMED clears on its own and
-the report is resubmitted under the same settlement_ref once the transaction
-confirms; the other reasons open a manual reconciliation with t-0, and the
-corrected report follows from it.
+The report is not accepted. For a first-time ref the settlement is not recorded;
+for a CONFLICT on an already-accepted ref the original settlement stands.
+ON_CHAIN_UNCONFIRMED clears on its own and the report is resubmitted under the
+same settlement_ref once the transaction confirms; the other reasons open a manual
+reconciliation with t-0, and the corrected report follows from it.
 
 
 | Field | Type | Label | Description |
@@ -316,7 +336,7 @@ corrected report follows from it.
 | REASON_AMOUNT_MISMATCH | 20 | The confirmed amount does not equal amount_usdt or the covered intents' sum. |
 | REASON_WRONG_DESTINATION | 30 | destination_address (or its chain) is not the expected registered (chain, address) pair for the mode. |
 | REASON_INTENT_NOT_SETTLEABLE | 40 | A listed intent is unknown, not authorized, or already covered. Fiat mode also accepts a settled intent, whose Acquirer confirmation may land before this reimbursement. |
-| REASON_SETTLEMENT_REF_CONFLICT | 50 | This on-chain transfer is already recorded under a different settlement_ref. |
+| REASON_SETTLEMENT_REF_CONFLICT | 50 | Either this on-chain transfer is already recorded under a different settlement_ref, or this settlement_ref is already recorded with different identity fields. The stored settlement stands; a genuinely different transfer needs a different ref. |
 
 
  <!-- end enums -->
