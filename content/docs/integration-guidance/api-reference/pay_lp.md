@@ -198,7 +198,7 @@ This message has no fields defined.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| quote_ref | [string](../scalar/#string) |  | LP's identifier for this quote; idempotency key, unique per LP. |
+| quote_ref | [string](../scalar/#string) |  | LP's identifier for this quote; idempotency key, unique per LP. Mint a fresh quote_ref for every new quote. |
 | local_currency | [string](../scalar/#string) |  | ISO 4217 currency the quote prices (e.g. COP). |
 | fx_rate | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Published rate, in units of local_currency per 1 USDt. |
 | expires_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the quote stops standing, on t-0's clock. Validity bounds are a business decline (VALIDITY_INVALID), not request validation. |
