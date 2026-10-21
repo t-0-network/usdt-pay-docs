@@ -1,0 +1,18 @@
+{{- /*
+  Renders a site param that CI sets from a repository variable (see
+  .github/workflows/hugo.yaml). Pulumi writes the variables from the backend
+  stacks.
+  Usage: {{< infra-param "api.domain.sandbox" "https://" >}}
+  The second argument is an optional prefix. Without a value, the shortcode
+  renders "Not live yet": Pulumi writes a variable once pay runs in that
+  environment.
+*/ -}}
+{{- $key := .Get 0 -}}
+{{- if not $key -}}
+  {{- errorf "infra-param: missing param key at %s" .Position -}}
+{{- end -}}
+{{- with .Page.Param $key -}}
+  <code>{{ $.Get 1 | default "" }}{{ . }}</code>
+{{- else -}}
+  Not live yet
+{{- end -}}

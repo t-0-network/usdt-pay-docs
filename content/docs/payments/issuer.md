@@ -12,7 +12,7 @@ You are the only role that touches the chain in both directions. You reserve one
 ## Before you start
 
 1. Exchange your secp256k1 public key with t-0 at onboarding and receive t-0's.
-2. Set the sandbox or production endpoint from the same exchange.
+2. Point your client at the sandbox or production base URL from [API endpoints](/docs/integration-guidance/introduction/#api-endpoints).
 3. Expose a callback URL t-0 can reach.
 4. Handle every amount as `Decimal{unscaled, exponent}` with decimal-safe arithmetic.
 

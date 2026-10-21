@@ -19,7 +19,14 @@ The service and message definitions are in the [API Reference](api-reference/), 
 
 ## API endpoints
 
-Sandbox and production endpoints are provided during onboarding.
+| Environment | Base URL | Egress IP |
+|---|---|---|
+| Sandbox | {{< infra-param "api.domain.sandbox" "https://" >}} | {{< infra-param "egress.ip.sandbox" >}} |
+| Production | {{< infra-param "api.domain.production" "https://" >}} | {{< infra-param "egress.ip.production" >}} |
+
+t-0 calls your callback URL from the egress IP. You decide whether to add it to your firewall allowlist. Either way, verify the signature on every request from t-0 (see [Request Authentication](protocol/authentication)).
+
+t-0 uses a separate public key in each environment. You receive both at onboarding.
 
 ## Idempotency and reliability
 
