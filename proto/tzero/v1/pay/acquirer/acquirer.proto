@@ -9,6 +9,7 @@ package tzero.v1.pay.acquirer;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "tzero/v1/pay/common.proto";
+import "tzero/v1/pay/validate.proto";
 
 /**
  * t-0 endpoints the Acquirer calls to price a payment, open a payment intent, and
@@ -237,8 +238,6 @@ message CreatePaymentIntentRequest {
   oneof settlement_quote {
     /** A standing quote from GetPaymentQuote; it must still stand, and its currency must equal local.currency when `local` is given. */
     uint64 quote_id = 120 [(buf.validate.field).uint64.gt = 0];
-    // Reserved, not on the wire yet: `quote_currency`, pricing by the freshest
-    // standing quote for a named currency.
   }
 }
 
@@ -282,7 +281,38 @@ message CreatePaymentIntentResponse {
     /** The customer's USDt-via-QR payment instructions. */
     message UsdtOnChainInstructions {
       /** One deposit option per chain the Issuer supports for this intent; the customer picks one in their wallet. */
-      repeated tzero.v1.pay.DepositOption deposit_options = 30 [(buf.validate.field).repeated = {min_items: 1}];
+      repeated DepositOption deposit_options = 30 [(buf.validate.field).repeated = {min_items: 1}];
+
+      /**
+       * One selectable deposit option: the chain, the one-time address reserved
+       * on it, and the USDt token contract with its decimals. Together with
+       * settlement_amount these are everything the POS needs to build whatever
+       * it carries to the customer (a QR image, a wallet deep link, or a plain
+       * address).
+       */
+      message DepositOption {
+        /** Chain this deposit option pays on. */
+        tzero.v1.pay.Blockchain chain = 10 [(buf.validate.field).enum = {
+          defined_only: true
+          not_in: [0]
+        }];
+
+        /** One-time deposit address reserved for this intent on `chain`. */
+        string deposit_address = 20 [(buf.validate.field).string.(tzero.v1.pay.valid_address) = true];
+
+        /** USDt token contract on `chain` the deposit must be made in. */
+        string token_contract = 40 [(buf.validate.field).string.(tzero.v1.pay.valid_address) = true];
+
+        /**
+         * Decimals of `token_contract`: the amount to transfer in the token's
+         * base units is settlement_amount * 10^token_decimals. USDt does not use
+         * the same decimals on every chain.
+         */
+        uint32 token_decimals = 50 [(buf.validate.field).uint32 = {
+          gte: 2
+          lte: 18
+        }];
+      }
     }
 
     /** How the Acquirer is settled for this payment, per its configured settlement mode; always present, also when the variant carries no data. */
@@ -407,7 +437,6 @@ message PaymentAuthorizedRequest {
   google.protobuf.Timestamp received_at = 60 [(buf.validate.field).required = true];
 
   /** The fiat terms locked on CreatePaymentIntent; present only for an Acquirer settled in fiat. */
-  // no validation: absent for an Acquirer settled on-chain, so no presence rule applies.
   FiatSettlement fiat_settlement = 80;
 }
 
@@ -493,7 +522,6 @@ message PaymentExpiredRequest {
   google.protobuf.Timestamp expired_at = 30 [(buf.validate.field).required = true];
 
   /** The fiat terms locked on CreatePaymentIntent; present only for an Acquirer settled in fiat. */
-  // no validation: absent for an Acquirer settled on-chain, so no presence rule applies.
   FiatSettlement fiat_settlement = 50;
 }
 
@@ -533,11 +561,16 @@ message PaymentFailedRequest {
     not_in: [0]
   }];
 
+  /** Why the Issuer will not process the deposit, so the merchant can tell the customer. */
+  tzero.v1.pay.PaymentFailureReason reason = 70 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
   /** Moment the intent became terminally failed. */
   google.protobuf.Timestamp failed_at = 60 [(buf.validate.field).required = true];
 
   /** The fiat terms locked on CreatePaymentIntent; present only for an Acquirer settled in fiat. */
-  // no validation: absent for an Acquirer settled on-chain, so no presence rule applies.
   FiatSettlement fiat_settlement = 80;
 }
 
