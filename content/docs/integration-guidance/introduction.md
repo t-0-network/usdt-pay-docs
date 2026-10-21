@@ -19,7 +19,12 @@ The service and message definitions are in the [API Reference](api-reference/), 
 
 ## API endpoints
 
-Sandbox and production endpoints are provided during onboarding.
+| Environment | Base URL |
+|---|---|
+| Sandbox | `https://pay-api-sandbox.t-0.network` |
+| Production | `https://pay-api.t-0.network` |
+
+t-0 uses a separate public key in each environment. You receive both at onboarding.
 
 ## Idempotency and reliability
 
