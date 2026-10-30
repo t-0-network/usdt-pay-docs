@@ -32,7 +32,10 @@ service IssuerService {
  * the deposit options for an intent.
  */
 service IssuerCallbackService {
-  /** Reserves one deposit address per supported chain and returns the deposit options. */
+  /**
+   * Reserves one deposit address per supported chain and returns the deposit options.
+   * A repeat with the same payment_intent_id reserves nothing new, and a repeat after a success returns the same instructions.
+   */
   rpc CreatePaymentInstructions(CreatePaymentInstructionsRequest) returns (CreatePaymentInstructionsResponse) {
     option idempotency_level = IDEMPOTENT;
   }
