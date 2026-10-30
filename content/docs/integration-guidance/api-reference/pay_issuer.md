@@ -17,7 +17,7 @@ the deposit options for an intent.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| CreatePaymentInstructions | [CreatePaymentInstructionsRequest](#tzero-v1-pay-issuer-CreatePaymentInstructionsRequest) | [CreatePaymentInstructionsResponse](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse) | Reserves one deposit address per supported chain and returns the deposit options. |
+| CreatePaymentInstructions | [CreatePaymentInstructionsRequest](#tzero-v1-pay-issuer-CreatePaymentInstructionsRequest) | [CreatePaymentInstructionsResponse](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse) | Reserves one deposit address per supported chain and returns the deposit options. A repeat with the same payment_intent_id reserves nothing new, and a repeat after a success returns the same instructions. |
 
 
 <a name="tzero-v1-pay-issuer-IssuerService"></a>
