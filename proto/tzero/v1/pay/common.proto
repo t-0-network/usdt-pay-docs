@@ -82,7 +82,8 @@ enum PaymentFailureReason {
 
 /**
  * One on-chain USDt settlement transfer, as reported by the Issuer on
- * SettlementSent and relayed to the Acquirer on SettlementCompleted.
+ * SettlementSent and relayed to the Acquirer on SettlementCompleted or to the
+ * LP on UsdtSettlementCompleted.
  */
 message OnChainSettlementDetails {
   /** Hash of the settlement transaction. */
