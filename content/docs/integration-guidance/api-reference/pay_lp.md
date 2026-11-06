@@ -12,12 +12,15 @@ toc: true
 <a name="tzero-v1-pay-lp-LpCallbackService"></a>
 
 ## LpCallbackService
-LP-implemented endpoint t-0 calls to request the LP's durable decision on a
-standing quote execution for one authorized payment. Fiat mode only.
+LP-implemented endpoints t-0 calls to request the LP's durable decision on a
+standing quote execution for one authorized payment, and to report the
+Issuer's USDt settlement verified on-chain to the LP's wallet. Fiat mode
+only.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | ExecuteQuote | [ExecuteQuoteRequest](#tzero-v1-pay-lp-ExecuteQuoteRequest) | [ExecuteQuoteResponse](#tzero-v1-pay-lp-ExecuteQuoteResponse) | Requests a durable Accepted or Rejected result; only Accepted creates the LP's firm per-payment obligation. |
+| UsdtSettlementCompleted | [UsdtSettlementCompletedRequest](#tzero-v1-pay-lp-UsdtSettlementCompletedRequest) | [UsdtSettlementCompletedResponse](#tzero-v1-pay-lp-UsdtSettlementCompletedResponse) | The Issuer's USDt settlement verified on-chain as reaching the LP's wallet, with the executions it covers; delivered at least once per settlement_id. |
 
 
 <a name="tzero-v1-pay-lp-LpService"></a>
@@ -269,6 +272,39 @@ This message has no fields defined.
 | quote_ref | [string](../scalar/#string) |  | Echo of the quote's quote_ref. |
 | quote_id | [uint64](../scalar/#uint64) |  | t-0's id for the standing quote, used everywhere downstream. |
 
+
+
+
+
+
+
+<a name="tzero-v1-pay-lp-UsdtSettlementCompletedRequest"></a>
+
+### UsdtSettlementCompletedRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| settlement_id | [uint64](../scalar/#uint64) |  | t-0's id for this on-chain settlement; the LP dedupes on it. |
+| settlement_amount | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | USDt amount that reached the LP's wallet. |
+| settled_execution_ids | [uint64](../scalar/#uint64) | repeated | Executions this settlement covers, ascending. May include one the LP rejected or has not answered yet. |
+| settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment t-0 verified the settlement final on-chain. |
+| settlement | [tzero.v1.pay.OnChainSettlementDetails](../pay_common/#tzero-v1-pay-OnChainSettlementDetails) |  | The on-chain USDt transfer that reached the LP's registered wallet. |
+
+
+
+
+
+
+
+<a name="tzero-v1-pay-lp-UsdtSettlementCompletedResponse"></a>
+
+### UsdtSettlementCompletedResponse
+
+
+
+This message has no fields defined.
 
 
 

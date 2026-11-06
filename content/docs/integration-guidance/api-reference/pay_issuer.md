@@ -17,7 +17,7 @@ the deposit options for an intent.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| CreatePaymentInstructions | [CreatePaymentInstructionsRequest](#tzero-v1-pay-issuer-CreatePaymentInstructionsRequest) | [CreatePaymentInstructionsResponse](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse) | Reserves one deposit address per supported chain and returns the deposit options. |
+| CreatePaymentInstructions | [CreatePaymentInstructionsRequest](#tzero-v1-pay-issuer-CreatePaymentInstructionsRequest) | [CreatePaymentInstructionsResponse](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse) | Reserves one deposit address per supported chain and returns the deposit options. A repeat with the same payment_intent_id reserves nothing new, and a repeat after a success returns the same instructions. |
 
 
 <a name="tzero-v1-pay-issuer-IssuerService"></a>
@@ -334,7 +334,7 @@ reconciliation with t-0, and the corrected report follows from it.
 | REASON_ON_CHAIN_UNCONFIRMED | 10 | The on-chain transaction is not yet confirmed. SettlementSent does not return this reason. |
 | REASON_AMOUNT_MISMATCH | 20 | The confirmed amount does not equal amount_usdt or the covered intents' sum. |
 | REASON_WRONG_DESTINATION | 30 | destination_address (or its chain) is not the expected registered (chain, address) pair for the mode. |
-| REASON_INTENT_NOT_SETTLEABLE | 40 | A listed intent is unknown, not authorized, or already covered. Fiat mode also accepts a settled intent, whose Acquirer confirmation may land before this reimbursement. |
+| REASON_INTENT_NOT_SETTLEABLE | 40 | A listed intent is unknown, not authorized, or already covered. Fiat mode also accepts a settled intent, whose Acquirer confirmation may land before the LP's USDt settlement. |
 | REASON_SETTLEMENT_REF_CONFLICT | 50 | Either this on-chain transfer is already recorded under a different settlement_ref, or this settlement_ref is already recorded with different identity fields. The stored settlement stands; a genuinely different transfer needs a different ref. |
 
 
