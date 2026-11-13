@@ -8,6 +8,7 @@ package tzero.v1.pay.acquirer;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "tzero/v1/common/timeout.proto";
 import "tzero/v1/pay/common.proto";
 import "tzero/v1/pay/validate.proto";
 
@@ -16,19 +17,22 @@ import "tzero/v1/pay/validate.proto";
  * confirm fiat receipt.
  */
 service AcquirerService {
-  /** Prices an upcoming local-fiat payment from t-0's Order Book of standing LP quotes; fiat settlement mode only. */
+  /** Prices an upcoming local-fiat payment from t-0's Order Book of standing LP quotes; fiat settlement mode only, and refused as a failed precondition for an Acquirer that no LP serves. */
   rpc GetPaymentQuote(GetPaymentQuoteRequest) returns (GetPaymentQuoteResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
+    option (tzero.v1.common.timeout) = {seconds: 30};
   }
 
   /** Opens a payment intent; t-0 reserves deposit addresses with the Issuer inline and returns the payment instructions. */
   rpc CreatePaymentIntent(CreatePaymentIntentRequest) returns (CreatePaymentIntentResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (tzero.v1.common.timeout) = {seconds: 10};
   }
 
   /** Confirms that a fiat settlement landed in the Acquirer's bank account; fiat settlement mode only, and the only event that settles the covered intents. */
   rpc SettlementReceived(SettlementReceivedRequest) returns (SettlementReceivedResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (tzero.v1.common.timeout) = {seconds: 30};
   }
 }
 
@@ -42,26 +46,31 @@ service AcquirerCallbackService {
   /** Tells the merchant the payment is approved; from here the Issuer is obligated to settle. */
   rpc PaymentAuthorized(PaymentAuthorizedRequest) returns (PaymentAuthorizedResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (tzero.v1.common.timeout) = {seconds: 30};
   }
 
   /** Pre-notice that the LP sent a fiat bank transfer, naming the reference to expect; fiat settlement mode only, and does not settle the intents. */
   rpc SettlementInitiated(SettlementInitiatedRequest) returns (SettlementInitiatedResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (tzero.v1.common.timeout) = {seconds: 30};
   }
 
   /** The Issuer's USDt settlement verified on-chain as reaching the Acquirer's wallet, with the intents it clears; USDt settlement mode only — in fiat mode the Acquirer's own SettlementReceived is the terminal event. */
   rpc SettlementCompleted(SettlementCompletedRequest) returns (SettlementCompletedResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (tzero.v1.common.timeout) = {seconds: 30};
   }
 
   /** The QR window lapsed with no payment; clear the pending order and drop the QR. */
   rpc PaymentExpired(PaymentExpiredRequest) returns (PaymentExpiredResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (tzero.v1.common.timeout) = {seconds: 30};
   }
 
   /** A deposit arrived that the Issuer will not process; the payment is over and will not settle. */
   rpc PaymentFailed(PaymentFailedRequest) returns (PaymentFailedResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (tzero.v1.common.timeout) = {seconds: 30};
   }
 }
 
@@ -171,7 +180,7 @@ message GetPaymentQuoteResponse {
 
     enum Reason {
       REASON_UNSPECIFIED = 0;
-      // No standing quote available for this currency right now.
+      // No standing quote for this currency right now; wait, then retry.
       REASON_QUOTE_UNAVAILABLE = 10;
     }
   }
@@ -315,7 +324,7 @@ message CreatePaymentIntentResponse {
       }
     }
 
-    /** How the Acquirer is settled for this payment, per its configured settlement mode; always present, also when the variant carries no data. */
+    /** How the Acquirer is settled for this payment, per its configured settlement mode; always present. */
     oneof settlement {
       option (buf.validate.oneof).required = true;
       FiatSettlement fiat = 120;
@@ -323,7 +332,7 @@ message CreatePaymentIntentResponse {
     }
 
     /**
-     * On-chain settlement mode; carries no data. The Issuer settles
+     * On-chain settlement mode. The Issuer settles
      * settlement_amount in USDt to the Acquirer's registered wallet; no quote
      * and no FX.
      */
@@ -335,17 +344,18 @@ message CreatePaymentIntentResponse {
 
     enum Reason {
       REASON_UNSPECIFIED = 0;
-      // The Issuer could not be reached, or returned no usable instructions.
+      // The Issuer could not be reached, or returned no usable instructions; wait a few seconds, then retry.
       REASON_ISSUER_UNAVAILABLE = 10;
-      // The Issuer has no free one-time deposit addresses.
+      // The Issuer has no free one-time deposit addresses; wait a few seconds, then retry.
       REASON_ADDRESS_POOL_EMPTY = 20;
-      // The amount falls outside the acceptable range.
+      // The amount falls outside the acceptable range; final for this amount, and a different amount is a new payment.
       REASON_AMOUNT_OUT_OF_RANGE = 40;
-      // The referenced quote no longer stands.
+      // The referenced quote no longer stands; retry with a fresh quote_id or with quote_id omitted, at a price that can differ.
       REASON_QUOTE_EXPIRED = 50;
-      // The quote's remaining validity is too short to guarantee execution before it expires.
+      // The quote's remaining validity is too short to guarantee execution before it expires; retry
+      // with a fresh quote_id or with quote_id omitted, at a price that can differ.
       REASON_QUOTE_INSUFFICIENT_HEADROOM = 70;
-      // No standing quote for the payment's currency right now (quote_id omitted).
+      // No standing quote for the payment's currency right now (quote_id omitted); wait, then retry.
       REASON_QUOTE_UNAVAILABLE = 80;
     }
   }
