@@ -34,7 +34,7 @@ confirm fiat receipt.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| GetPaymentQuote | [GetPaymentQuoteRequest](#tzero-v1-pay-acquirer-GetPaymentQuoteRequest) | [GetPaymentQuoteResponse](#tzero-v1-pay-acquirer-GetPaymentQuoteResponse) | Prices an upcoming local-fiat payment from t-0's Order Book of standing LP quotes; fiat settlement mode only. |
+| GetPaymentQuote | [GetPaymentQuoteRequest](#tzero-v1-pay-acquirer-GetPaymentQuoteRequest) | [GetPaymentQuoteResponse](#tzero-v1-pay-acquirer-GetPaymentQuoteResponse) | Prices an upcoming local-fiat payment from t-0's Order Book of standing LP quotes; fiat settlement mode only, and refused as a failed precondition for an Acquirer that no LP serves. |
 | CreatePaymentIntent | [CreatePaymentIntentRequest](#tzero-v1-pay-acquirer-CreatePaymentIntentRequest) | [CreatePaymentIntentResponse](#tzero-v1-pay-acquirer-CreatePaymentIntentResponse) | Opens a payment intent; t-0 reserves deposit addresses with the Issuer inline and returns the payment instructions. |
 | SettlementReceived | [SettlementReceivedRequest](#tzero-v1-pay-acquirer-SettlementReceivedRequest) | [SettlementReceivedResponse](#tzero-v1-pay-acquirer-SettlementReceivedResponse) | Confirms that a fiat settlement landed in the Acquirer's bank account; fiat settlement mode only, and the only event that settles the covered intents. |
 
@@ -140,7 +140,7 @@ settled in. What it becomes in fiat, and at which rate, is the response's
 <a name="tzero-v1-pay-acquirer-CreatePaymentIntentResponse-Success-OnchainSettlement"></a>
 
 ### CreatePaymentIntentResponse.Success.OnchainSettlement
-On-chain settlement mode; carries no data. The Issuer settles
+On-chain settlement mode. The Issuer settles
 settlement_amount in USDt to the Acquirer's registered wallet; no quote
 and no FX.
 
@@ -553,12 +553,12 @@ The confirmation was not recorded and the covered intents stay authorized; resub
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | REASON_UNSPECIFIED | 0 |  |
-| REASON_ISSUER_UNAVAILABLE | 10 | The Issuer could not be reached, or returned no usable instructions. |
-| REASON_ADDRESS_POOL_EMPTY | 20 | The Issuer has no free one-time deposit addresses. |
-| REASON_AMOUNT_OUT_OF_RANGE | 40 | The amount falls outside the acceptable range. |
-| REASON_QUOTE_EXPIRED | 50 | The referenced quote no longer stands. |
-| REASON_QUOTE_INSUFFICIENT_HEADROOM | 70 | The quote's remaining validity is too short to guarantee execution before it expires. |
-| REASON_QUOTE_UNAVAILABLE | 80 | No standing quote for the payment's currency right now (quote_id omitted). |
+| REASON_ISSUER_UNAVAILABLE | 10 | The Issuer could not be reached, or returned no usable instructions; wait a few seconds, then retry. |
+| REASON_ADDRESS_POOL_EMPTY | 20 | The Issuer has no free one-time deposit addresses; wait a few seconds, then retry. |
+| REASON_AMOUNT_OUT_OF_RANGE | 40 | The amount falls outside the acceptable range; final for this amount, and a different amount is a new payment. |
+| REASON_QUOTE_EXPIRED | 50 | The referenced quote no longer stands; retry with a fresh quote_id or with quote_id omitted, at a price that can differ. |
+| REASON_QUOTE_INSUFFICIENT_HEADROOM | 70 | The quote's remaining validity is too short to guarantee execution before it expires; retry with a fresh quote_id or with quote_id omitted, at a price that can differ. |
+| REASON_QUOTE_UNAVAILABLE | 80 | No standing quote for the payment's currency right now (quote_id omitted); wait, then retry. |
 
 
 
@@ -570,7 +570,7 @@ The confirmation was not recorded and the covered intents stay authorized; resub
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | REASON_UNSPECIFIED | 0 |  |
-| REASON_QUOTE_UNAVAILABLE | 10 | No standing quote available for this currency right now. |
+| REASON_QUOTE_UNAVAILABLE | 10 | No standing quote for this currency right now; wait, then retry. |
 
 
 

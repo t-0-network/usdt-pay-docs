@@ -17,7 +17,7 @@ the deposit options for an intent.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| CreatePaymentInstructions | [CreatePaymentInstructionsRequest](#tzero-v1-pay-issuer-CreatePaymentInstructionsRequest) | [CreatePaymentInstructionsResponse](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse) | Reserves one deposit address per supported chain and returns the deposit options. |
+| CreatePaymentInstructions | [CreatePaymentInstructionsRequest](#tzero-v1-pay-issuer-CreatePaymentInstructionsRequest) | [CreatePaymentInstructionsResponse](#tzero-v1-pay-issuer-CreatePaymentInstructionsResponse) | Reserves one deposit address per supported chain and returns the deposit options. A repeat with the same payment_intent_id reserves nothing new, and a repeat after a success returns the same instructions. |
 
 
 <a name="tzero-v1-pay-issuer-IssuerService"></a>
@@ -29,7 +29,7 @@ and the USDt settlements that clear the intents it covers.
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | PaymentReceived | [PaymentReceivedRequest](#tzero-v1-pay-issuer-PaymentReceivedRequest) | [PaymentReceivedResponse](#tzero-v1-pay-issuer-PaymentReceivedResponse) | Reports a deposit seen on-chain against an intent and the Issuer's final disposition of it. |
-| SettlementSent | [SettlementSentRequest](#tzero-v1-pay-issuer-SettlementSentRequest) | [SettlementSentResponse](#tzero-v1-pay-issuer-SettlementSentResponse) | Reports a USDt settlement sent on-chain to the registered destination, for t-0 to verify. |
+| SettlementSent | [SettlementSentRequest](#tzero-v1-pay-issuer-SettlementSentRequest) | [SettlementSentResponse](#tzero-v1-pay-issuer-SettlementSentResponse) | Reports a USDt settlement sent on-chain to the registered destination, for t-0 to verify. The transaction must be in a block within 10 minutes of the report: verification can fail a settlement whose transaction it still does not find after that. |
 
  <!-- end services -->
 
@@ -232,7 +232,7 @@ The report was not recorded.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | settlement_ref | [string](../scalar/#string) |  | Issuer's id for this USDt settlement; idempotency key, unique per Issuer. |
-| amount_usdt | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Total USDt settled across the covered intents. |
+| amount_usdt | [tzero.v1.pay.Decimal](../pay_common/#tzero-v1-pay-Decimal) |  | Total USDt settled across the covered intents. The transaction must hold one USDt transfer of exactly this amount to the destination; the amounts of several transfers are not added up. |
 | settlement | [tzero.v1.pay.OnChainSettlementDetails](../pay_common/#tzero-v1-pay-OnChainSettlementDetails) |  | On-chain transaction, chain, and registered destination wallet for this settlement. |
 | settled_payment_intent_ids | [uint64](../scalar/#uint64) | repeated | Intents this settlement clears, treated as a set; per-intent amounts come from t-0's ledger. |
 | settled_at | [google.protobuf.Timestamp](../scalar/#google-protobuf-Timestamp) |  | Moment the Issuer broadcast the settlement transaction. |
@@ -334,7 +334,7 @@ reconciliation with t-0, and the corrected report follows from it.
 | REASON_ON_CHAIN_UNCONFIRMED | 10 | The on-chain transaction is not yet confirmed. SettlementSent does not return this reason. |
 | REASON_AMOUNT_MISMATCH | 20 | The confirmed amount does not equal amount_usdt or the covered intents' sum. |
 | REASON_WRONG_DESTINATION | 30 | destination_address (or its chain) is not the expected registered (chain, address) pair for the mode. |
-| REASON_INTENT_NOT_SETTLEABLE | 40 | A listed intent is unknown, not authorized, or already covered. Fiat mode also accepts a settled intent, whose Acquirer confirmation may land before this reimbursement. |
+| REASON_INTENT_NOT_SETTLEABLE | 40 | A listed intent is unknown, not authorized, or already covered. Fiat mode also accepts a settled intent, whose Acquirer confirmation may land before the LP's USDt settlement. |
 | REASON_SETTLEMENT_REF_CONFLICT | 50 | Either this on-chain transfer is already recorded under a different settlement_ref, or this settlement_ref is already recorded with different identity fields. The stored settlement stands; a genuinely different transfer needs a different ref. |
 
 
