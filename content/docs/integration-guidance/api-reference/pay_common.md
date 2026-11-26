@@ -36,7 +36,8 @@ unscaled=12345, exponent=-2.
 
 ### OnChainSettlementDetails
 One on-chain USDt settlement transfer, as reported by the Issuer on
-SettlementSent and relayed to the Acquirer on SettlementCompleted.
+SettlementSent and relayed to the Acquirer on SettlementCompleted or to the
+LP on UsdtSettlementCompleted.
 
 
 | Field | Type | Label | Description |
@@ -55,7 +56,7 @@ SettlementSent and relayed to the Acquirer on SettlementCompleted.
 
 ### UsdtOnChainPayment
 One on-chain USDt transfer made by the customer. The only payment-method
-variant in the MVP.
+variant.
 
 
 | Field | Type | Label | Description |
@@ -75,8 +76,7 @@ variant in the MVP.
 <a name="tzero-v1-pay-Blockchain"></a>
 
 ### Blockchain
-On-chain network a USDt transfer moves over. Live: ETH, BSC, Polygon,
-Arbitrum and Plasma. TRON carries a value but is not accepted.
+On-chain network a USDt transfer moves over.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
